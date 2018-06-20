@@ -846,6 +846,10 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
             ('X-Loop', 'dispatch@{}'.format(DISTRO_TRACKER_FQDN)),
             ('X-Distro-Tracker-Team', self.team.slug),
             ('X-Distro-Tracker-Keyword', 'contact'),
+            ('List-Unsubscribe',
+                '<mailto:{control_email}?body=unsubscribe%20{team}>'.format(
+                    control_email=DISTRO_TRACKER_CONTROL_EMAIL,
+                    team=self.team.slug)),
         ]
         self.assert_all_headers_found(headers)
 

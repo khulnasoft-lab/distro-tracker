@@ -275,7 +275,16 @@ def add_team_membership_headers(received_message, keyword, team):
     The function adds headers to the received message which are specific for
     messages to be sent to users that are members of a team.
     """
-    received_message['X-Distro-Tracker-Team'] = team.slug
+    new_headers = [
+        ('X-Distro-Tracker-Team', team.slug),
+        ('List-Unsubscribe',
+            '<mailto:{control_email}?body=unsubscribe%20{team}>'.format(
+                control_email=DISTRO_TRACKER_CONTROL_EMAIL,
+                team=team.slug
+            )),
+    ]
+    for header_name, header_value in new_headers:
+        received_message[header_name] = header_value
 
 
 def send_to_teams(received_message, package_name, keyword):
