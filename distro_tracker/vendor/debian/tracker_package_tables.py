@@ -24,6 +24,7 @@ class UpstreamTableField(BaseTableField):
     This table field displays information regarding the upstream version.
     It displays the package's upstream version with a link to the source code
     """
+    slug = 'upstream'
     column_name = 'Upstream'
     template_name = 'debian/package-table-fields/upstream.html'
     prefetch_related_lookups = [

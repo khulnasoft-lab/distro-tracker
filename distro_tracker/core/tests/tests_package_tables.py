@@ -15,6 +15,8 @@ Tests for the Distro Tracker core package tables.
 """
 from bs4 import BeautifulSoup as soup
 
+from django.core.cache import cache
+from django_redis import get_redis_connection
 from distro_tracker.core.models import (
     PackageData,
     PackageBugStats,
@@ -204,6 +206,10 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         create_package_bug_stats(self.package)
         self.team.packages.add(self.package)
 
+    def tearDown(self):
+        # Clean all cached data
+        get_redis_connection("default").flushall()
+
     def get_team_page_response(self):
         return self.client.get(self.team.get_absolute_url())
 
@@ -282,12 +288,12 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         queries regardless of the number of packages
         """
         table = GeneralTeamPackageTable(self.team)
-        self.assert_number_of_queries(table, 5)
+        self.assert_number_of_queries(table, 6)
 
         new_package = create_source_package_with_data('another-dummy-package')
         create_package_bug_stats(new_package)
         self.team.packages.add(new_package)
-        self.assert_number_of_queries(table, 5)
+        self.assert_number_of_queries(table, 6)
 
     def test_table_limit_of_packages(self):
         """
@@ -311,4 +317,47 @@ class GeneralTeamPackageTableTests(TestCase, TemplateTestsMixin):
         # Get the first column from the second row
         table_field = table.rows[1][0]
         self.assertIn(new_package.name, table_field)
-        # Get the first column from the second row
+
+    def test_caching_mechanism_for_table_cells(self):
+        """
+        Test caching for table cells after first access
+        """
+        table = GeneralTeamPackageTable(self.team)
+        for table_field in table.table_fields:
+            field = table_field()
+            for package in self.team.packages.all():
+                entry_name = package.name + '_' + field.slug
+                self.assertIsNone(cache.get(entry_name))
+
+        # Request page to cache table cells
+        self.get_team_page_response()
+
+        for table_field in table.table_fields:
+            field = table_field()
+            for package in self.team.packages.all():
+                entry_name = package.name + '_' + field.slug
+                self.assertIsNotNone(cache.get(entry_name))
+
+    def test_using_cached_table_cells(self):
+        """
+        Test using cached data when available
+        """
+        data = PackageData.objects.get(key='general', package=self.package)
+        value = data.value
+        old_version = value['version']
+
+        # Request page to cache table cells
+        response = self.get_team_page_response()
+        table = self.get_general_package_table(response)
+        self.assertIn(old_version, str(table))
+
+        new_version = '3.0'
+        value['version'] = new_version
+        data.value = value
+        data.save()
+        self.assertEqual(data.value['version'], '3.0')
+        # Response must return cached data
+        response = self.get_team_page_response()
+        table = self.get_general_package_table(response)
+        self.assertNotIn(new_version, str(table))
+        self.assertIn(old_version, str(table))

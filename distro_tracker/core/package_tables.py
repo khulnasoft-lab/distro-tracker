@@ -11,6 +11,7 @@
 import logging
 import importlib
 
+from django.core.cache import cache
 from django.db.models import Prefetch
 from django.conf import settings
 from django.template.loader import get_template
@@ -23,6 +24,7 @@ from distro_tracker.core.models import (
 )
 from distro_tracker.core.utils import get_vcs_name, add_developer_extras
 from distro_tracker.core.utils.plugins import PluginRegistry
+from redis.exceptions import ConnectionError
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +100,7 @@ class GeneralInformationTableField(BaseTableField):
     - standards version
     - binaries
     """
+    slug = 'general'
     column_name = 'Package'
     template_name = 'core/package-table-fields/general.html'
     prefetch_related_lookups = [
@@ -169,6 +172,7 @@ class VcsTableField(BaseTableField):
     should also implement the :func:`additional_prefetch_related_lookups
     <distro_tracker.vendor.skeleton.rules.additional_prefetch_related_lookups>`
     """
+    slug = 'vcs'
     column_name = 'VCS'
     _default_template_name = 'core/package-table-fields/vcs.html'
     prefetch_related_lookups = [
@@ -216,6 +220,7 @@ class ArchiveTableField(BaseTableField):
 
     It displays the package's version on archive
     """
+    slug = 'archive'
     column_name = 'Archive'
     template_name = 'core/package-table-fields/archive.html'
     prefetch_related_lookups = [
@@ -274,6 +279,7 @@ class BugStatsTableField(BaseTableField, BugDisplayManagerMixin):
     should also implement the :func:`additional_prefetch_related_lookups
     <distro_tracker.vendor.skeleton.rules.additional_prefetch_related_lookups>`
     """
+    slug = 'bugs'
     column_name = 'Bugs'
     prefetch_related_lookups = ['bug_stats']
 
@@ -302,6 +308,7 @@ class BasePackageTable(metaclass=PluginRegistry):
     - :func:`get_table_fields
       <distro_tracker.vendor.skeleton.rules.get_table_fields>`
     """
+    TABLE_CELL_CACHING_TIMEOUT = 14400  # 4 hours
 
     def __init__(self, scope, limit=None):
         """
@@ -424,18 +431,44 @@ class BasePackageTable(metaclass=PluginRegistry):
             packages = packages[:self.limit]
 
         fields = [f() for f in self.table_fields]
+
+        entries = []
+        for package_name in packages.values_list('name', flat=True):
+            for field in fields:
+                entries.append(package_name + '_' + field.slug)
+
+        try:
+            packages_data = cache.get_many(entries)
+        except ConnectionError:
+            packages_data = {}
+
         context = {
             'field': {
                 'context': ''
             },
         }
+        entries_to_update = {}
         for package in packages:
-            context['package'] = package
             row = []
             for field in fields:
-                context['field']['context'] = field.context(package)
-                row.append(field.render(package, context))
+                entry_name = package.name + '_' + field.slug
+                if entry_name in packages_data:
+                    row.append(packages_data[entry_name])
+                else:
+                    context['field']['context'] = field.context(package)
+                    content = field.render(package, context)
+                    row.append(content)
+                    packages_data[entry_name] = content
+                    entries_to_update[entry_name] = packages_data[entry_name]
             rows_list.append(row)
+
+        try:
+            cache.set_many(
+                entries_to_update, timeout=self.TABLE_CELL_CACHING_TIMEOUT)
+        except ConnectionError:
+            logger.exception(
+                '{table}: error while caching table cells.'.format(
+                    table=self.__class__))
 
         return rows_list
 
