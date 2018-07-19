@@ -20,6 +20,9 @@ from unittest import mock
 from django.conf import settings
 from django.test.utils import override_settings
 
+from django.core.cache import cache
+from django_redis import get_redis_connection
+
 from distro_tracker.accounts.models import User, UserEmail
 from distro_tracker.core.models import (
     Architecture,
@@ -1344,3 +1347,28 @@ class UpdatePackageGeneralInformationTest(TestCase):
         self.assertEqual(pkgdata['version'], self.srcpkg.version)
         self.assertListEqual(pkgdata['architectures'], ['amd64', 'i386'])
         self.assertEqual(pkgdata['component'], self.component)
+
+    def test_cleaning_cached_table_cells_after_running_task(self):
+        cached_data = {
+            'dummy-package_general': 'general content',
+            'dummy-package_vcs': 'vcs content',
+            'dummy-package_archive': 'archive content',
+            'dummy-package_bugs': 'bugs content',
+            'another-package_general': 'another content',
+        }
+        cache.set_many(cached_data)
+
+        # execute the task
+        task = UpdatePackageGeneralInformation(force_update=True)
+        task.execute()
+
+        self.assertIsNone(cache.get('dummy-package_general'))
+        self.assertIsNone(cache.get('dummy-package_vcs'))
+        self.assertIsNone(cache.get('dummy-package_archive'))
+        # It does not remove cached entries for bugs table field
+        self.assertIsNotNone(cache.get('dummy-package_bugs'))
+        # It does not remove entries for packages not affected by the task
+        self.assertIsNotNone(cache.get('another-package_general'))
+
+        # Clean all cached data
+        get_redis_connection("default").flushall()

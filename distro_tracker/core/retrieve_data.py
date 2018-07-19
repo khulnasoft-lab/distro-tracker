@@ -900,6 +900,8 @@ class UpdatePackageGeneralInformation(PackageUpdateTask):
                 )
                 general.value = self._get_info_from_entry(entry)
                 general.save()
+            self.remove_table_field_cached_entries(
+                qs, ['general', 'vcs', 'archive'])
 
 
 class UpdateVersionInformation(PackageUpdateTask):
@@ -1027,6 +1029,8 @@ class UpdateSourceToBinariesInformation(PackageUpdateTask):
                     package=package)
                 binaries.value = self._get_all_binaries(package)
                 binaries.save()
+            self.remove_table_field_cached_entries(
+                qs, ['general'])
 
 
 class UpdateTeamPackagesTask(BaseTask):

@@ -18,6 +18,7 @@ import logging
 from collections import defaultdict
 
 from django.conf import settings
+from django.core.cache import cache
 
 from distro_tracker.core.models import RunningJob
 from distro_tracker.core.utils.datastructures import DAG
@@ -224,6 +225,20 @@ class BaseTask(metaclass=PluginRegistry):
             level = logging.INFO
         message = "{} {}".format(self.task_name(), message)
         logger.log(level, message, *args, **kwargs)
+
+    def remove_table_field_cached_entries(self, packages, field_slugs):
+        """
+        Function to remove cached table cells for a list of packages and
+        fields whose data is updated by the current task
+        """
+        entries = []
+        for package in packages:
+            for slug in field_slugs:
+                entries.append(package.name + '_' + slug)
+        try:
+            cache.delete_many(entries)
+        except ConnectionError:
+            self.log('error while deleting cached entries', level=logger.ERROR)
 
 
 class Event(object):

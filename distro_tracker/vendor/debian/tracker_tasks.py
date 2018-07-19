@@ -499,6 +499,7 @@ class UpdatePackageBugStats(BaseTask):
                 self._create_action_items(package_bug_stats)
 
             PackageBugStats.objects.bulk_create(stats)
+            self.remove_table_field_cached_entries(packages, ['bugs'])
 
     def update_binary_bugs(self):
         """
@@ -3153,3 +3154,4 @@ class UpdateVcsWatchTask(BaseTask):
                 action_item.save()
             for package_info in todo['update']['package_infos']:
                 package_info.save()
+        self.remove_table_field_cached_entries(packages, ['vcs'])

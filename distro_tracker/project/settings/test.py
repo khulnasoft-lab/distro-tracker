@@ -21,3 +21,13 @@ INSTALLED_APPS.extend([
     'distro_tracker.vendor',
     'distro_tracker.vendor.debian',
 ])
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "REDIS_CLIENT_CLASS": "fakeredis.FakeStrictRedis",
+        }
+    }
+}

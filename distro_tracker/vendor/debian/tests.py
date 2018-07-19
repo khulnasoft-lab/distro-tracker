@@ -27,6 +27,8 @@ from unittest import mock
 from bs4 import BeautifulSoup as soup
 from django.core import mail
 from django.core.management import call_command
+from django.core.cache import cache
+from django_redis import get_redis_connection
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
@@ -2318,6 +2320,28 @@ class DebianBugActionItemsTests(TestCase):
             help_item = package.action_items.get(
                 item_type=self.get_help_action_type())
             self.assertEqual(help_item.extra_data['bug_count'], help_bug_count)
+
+    def test_cleaning_cached_table_cells_after_running_task(self):
+        cached_data = {
+            'dummy-package_general': 'general content',
+            'dummy-package_bugs': 'bugs content',
+            'another-package_bugs': 'another bugs content',
+        }
+        cache.set_many(cached_data)
+
+        bug_count = 2
+        self.add_patch_bug(self.package_name.name, bug_count)
+
+        self.run_task()
+
+        self.assertIsNone(cache.get('dummy-package_bugs'))
+        # It does not remove cached entries for other table field
+        self.assertIsNotNone(cache.get('dummy-package_general'))
+        # It does not remove entries for packages not affected by the task
+        self.assertIsNotNone(cache.get('another-package_bugs'))
+
+        # Clean all cached data
+        get_redis_connection("default").flushall()
 
 
 class UpdateExcusesTaskActionItemTest(TestCase):
@@ -5958,6 +5982,25 @@ class UpdateVcsWatchTaskTest(TestCase):
         info = self.dummy_package.data.get(key='general')
 
         self.assertEqual(info.value['name'], 'dummy')
+
+    def test_cleaning_cached_table_cells_after_running_task(self):
+        cached_data = {
+            'dummy_general': 'general content',
+            'dummy_vcs': 'vcs content',
+            'another-package_vcs': 'another vcs content',
+        }
+        cache.set_many(cached_data)
+
+        self.run_task()
+
+        self.assertIsNone(cache.get('dummy_vcs'))
+        # It does not remove cached entries for other table field
+        self.assertIsNotNone(cache.get('dummy_general'))
+        # It does not remove entries for packages not affected by the task
+        self.assertIsNotNone(cache.get('another-package_vcs'))
+
+        # Clean all cached data
+        get_redis_connection("default").flushall()
 
 
 class AdditionalPrefetchRelatedLookupsTest(SimpleTestCase):
