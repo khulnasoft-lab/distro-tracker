@@ -27,6 +27,21 @@ class User(EmailAccountsUser):
     class Meta:
         proxy = True
 
+    @property
+    def packages(self):
+        """
+        This method is a is a convenient way to get all packages that a user
+        is subscribed to. It is required to enable displaying packages panels
+        in the user personal page.
+        """
+        from distro_tracker.core.models import PackageName, Subscription
+        subscriptions = Subscription.objects.get_for_email(self.main_email)
+        if subscriptions:
+            packages_ids = subscriptions.values_list('package_id', flat=True)
+            return PackageName.objects.filter(id__in=packages_ids)
+        else:
+            return PackageName.objects.none()
+
     def is_subscribed_to(self, package):
         """
         Checks if the user is subscribed to the given package. The user is

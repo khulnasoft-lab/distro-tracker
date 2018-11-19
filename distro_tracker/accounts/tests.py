@@ -100,6 +100,23 @@ class UserTests(TestCase):
             main_email=self.main_email, password='asdf')
         self.package = PackageName.objects.create(name='dummy-package')
 
+    def test_packages_property_based_on_subscriptions(self):
+        """
+        Tests the
+        :meth:`packages
+        <distro_tracker.accounts.models.User.packages>`
+        method when the user is subscribed to the package with their
+        main email.
+        """
+        self.assertEqual(len(self.user.packages), 0)
+
+        email = self.user.emails.all()[0]
+        Subscription.objects.create_for(
+            email=email.email,
+            package_name=self.package.name)
+        self.assertEqual(len(self.user.packages), 1)
+        self.assertIn(self.package, self.user.packages)
+
     def test_is_subscribed_to_main_email(self):
         """
         Tests the
