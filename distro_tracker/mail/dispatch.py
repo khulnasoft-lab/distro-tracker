@@ -13,6 +13,7 @@ them to subscribers.
 """
 import logging
 import re
+import urllib
 from copy import deepcopy
 from datetime import datetime
 
@@ -270,7 +271,7 @@ def add_direct_subscription_headers(received_message, package_name, keyword):
         received_message[header_name] = header_value
 
 
-def add_team_membership_headers(received_message, keyword, team):
+def add_team_membership_headers(received_message, keyword, team, user_email):
     """
     The function adds headers to the received message which are specific for
     messages to be sent to users that are members of a team.
@@ -278,9 +279,10 @@ def add_team_membership_headers(received_message, keyword, team):
     new_headers = [
         ('X-Distro-Tracker-Team', team.slug),
         ('List-Unsubscribe',
-            '<mailto:{control_email}?body=unsubscribe%20{team}>'.format(
+            '<mailto:{control_email}?body=leave-team%20{team}%20{email}>'.format(
                 control_email=DISTRO_TRACKER_CONTROL_EMAIL,
-                team=team.slug
+                team=team.slug,
+                email=urllib.parse.quote(user_email)
             )),
     ]
     for header_name, header_value in new_headers:
@@ -327,7 +329,6 @@ def send_to_team(received_message, team, keyword, package_name=None):
     messages_to_send = []
     logger.info('dispatch :: sending to team %s', team.slug)
     team_message = deepcopy(received_message)
-    add_team_membership_headers(team_message, keyword.name, team)
 
     # Send the message to each member of the team
     for membership in team.team_membership_set.all():
@@ -338,6 +339,8 @@ def send_to_team(received_message, team, keyword, package_name=None):
         if keyword not in membership.get_keywords(package):
             continue
 
+        add_team_membership_headers(
+            team_message, keyword.name, team, membership.user_email.email)
         messages_to_send.append(prepare_message(
             team_message, membership.user_email.email, date))
 

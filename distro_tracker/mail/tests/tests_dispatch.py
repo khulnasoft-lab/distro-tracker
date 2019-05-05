@@ -14,6 +14,7 @@ This module contains the tests for the dispatch functionality
 (:py:mod:`distro_tracker.mail.dispatch` module) of distro-tracker.
 """
 import logging
+import urllib
 from datetime import timedelta
 from email.message import Message
 from unittest import mock
@@ -847,10 +848,12 @@ class DispatchToTeamsTests(DispatchTestHelperMixin, TestCase):
             ('X-Distro-Tracker-Team', self.team.slug),
             ('X-Distro-Tracker-Keyword', 'contact'),
             ('List-Unsubscribe',
-                '<mailto:{control_email}?body=unsubscribe%20{team}>'.format(
+                '<mailto:{control_email}?body=leave-team%20{team}%20{email}>'.format(
                     control_email=DISTRO_TRACKER_CONTROL_EMAIL,
-                    team=self.team.slug)),
+                    team=self.team.slug,
+                    email=urllib.parse.quote(self.user_email))),
         ]
+        
         self.assert_all_headers_found(headers)
 
     def test_dispatch_to_non_existing_team(self):
