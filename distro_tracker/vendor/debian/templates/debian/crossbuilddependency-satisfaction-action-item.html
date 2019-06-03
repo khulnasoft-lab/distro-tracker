@@ -1,0 +1,17 @@
+<ul>
+{% for srcpkg, arches, expl, anchor in item.extra_data.unsats %}
+<li>Cross build dependencies in unstable cannot be satisfied on amd64 (<var>$build</var>) for
+{% if arches|length == 1 %}
+{{ arches|first }}
+{% elif arches|length == 2 %}
+{{ arches|first }} and {{ arches|last }}
+{% else %}
+{% spaceless %}
+{% for arch in arches %}
+<span>{% if forloop.first %}{{ arch }}{% elif forloop.last %}, and {{ arch }}{% else %}, {{ arch }}{% endif %}</span>
+{% endfor %}
+{% endspaceless %}
+{% endif %}
+(<var>$host</var>) because: <a href="{{ item.extra_data.base_url }}{{ srcpkg }}.html#{{ anchor }}">{{ expl }}</a></li>
+{% endfor %}
+</ul>

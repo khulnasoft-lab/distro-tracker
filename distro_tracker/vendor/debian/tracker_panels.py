@@ -108,7 +108,8 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
         # display debcheck link if there is at least one kind of problem
         has_debcheck = False
         for k in ['dependency_satisfaction',
-                  'builddependency_satisfaction']:
+                  'builddependency_satisfaction',
+                  'crossbuilddependency_satisfaction']:
             try:
                 self.package.data.get(key=k)
                 has_debcheck = True
