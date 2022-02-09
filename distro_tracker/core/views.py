@@ -168,8 +168,7 @@ class PackageAutocompleteView(View):
         # Sort alphabetically so the sorting by distance keeps alphabetical
         # order in case of same-distance package names
         package_names = sorted(filtered)
-        package_names = sorted(package_names,
-                               key=lambda name: distance(query_string, name))
+        package_names.sort(key=lambda name: distance(query_string, name))
 
         return render_to_json_response([query_string,
                                         package_names])
