@@ -136,7 +136,7 @@ class PackageAutocompleteView(View):
     A view which responds to package auto-complete queries.
 
     Renders a JSON list of package names matching the given query, meaning
-    their name starts with the given query parameter.
+    their name contains the given query parameter.
     """
     @method_decorator(cache_control(must_revalidate=True, max_age=3600))
     def get(self, request):
