@@ -165,7 +165,10 @@ class PackageAutocompleteView(View):
         def distance(word1, word2):
             return edlib.align(word1, word2)['editDistance']
 
-        package_names = sorted(filtered,
+        # Sort alphabetically so the sorting by distance keeps alphabetical
+        # order in case of same-distance package names
+        package_names = sorted(filtered)
+        package_names = sorted(package_names,
                                key=lambda name: distance(query_string, name))
 
         return render_to_json_response([query_string,
