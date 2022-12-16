@@ -240,11 +240,18 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         self.assertEqual(keyword, 'contact')
 
     def define_dak_mail(self, package='foo', subject=None,
-                        dak_cmd='dak process-upload'):
-        self.set_header('X-DAK', dak_cmd)
+                        dak_arch=None, dak_action=None,
+                        dak_cmd=None):
         self.set_header('X-Debian', 'DAK')
+        self.set_header('Debian', 'DAK')
+        if dak_cmd:
+            self.set_header('X-DAK', 'dak %s' % dak_cmd)
+        if dak_action:
+            self.set_header('Debian-Archive-Action', dak_action)
+        if dak_arch:
+            self.set_header('Debian-Architecture', dak_arch)
         if package:
-            self.set_header('X-Debian-Package', package)
+            self.set_header('Debian-Source', package)
         if subject:
             self.set_header('Subject', subject)
 
@@ -255,14 +262,15 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
 
     def test_classify_binary_upload_mails(self):
         subject = 'foo_1.0-1_amd64.changes ACCEPTED into unstable'
-        self.define_dak_mail(subject=subject)
+        self.define_dak_mail(subject=subject, dak_arch='amd64',
+                             dak_action='accept', dak_cmd='process-upload')
         _, keyword = self.run_classify()
         self.assertEqual(keyword, 'upload-binary')
 
     def test_classify_source_upload_mails(self):
-        subject = 'foo_1.0-1_amd64.changes ACCEPTED into unstable'
-        self.define_dak_mail(subject=subject)
-        self.set_message_content('' + 'a' * 40 + ' 1234 foo_1.0-1.dsc\n')
+        subject = 'foo_1.0-1_source.changes ACCEPTED into unstable'
+        self.define_dak_mail(subject=subject, dak_arch='source',
+                             dak_action='accept', dak_cmd='process-upload')
         _, keyword = self.run_classify()
         self.assertEqual(keyword, 'upload-source')
 
@@ -275,23 +283,29 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
     @mock.patch('distro_tracker.mail.mail_news.create_news')
     def test_classify_stores_dak_source_accepted_as_news(self,
                                                          mock_create_news):
-        subject = '\n Accepted libosmium 2.5.3-1 (source) into experimental'
-        self.define_dak_mail(package='pkg-a', subject=subject)
+        subject = '\n Accepted pkg-a 2.5.3-1 (source) into experimental'
+        self.define_dak_mail(package='pkg-a', subject=subject,
+                             dak_arch='source', dak_action='accept',
+                             dak_cmd='process-upload')
         self.run_classify()
         mock_create_news.assert_called_with(self.message, 'pkg-a',
                                             create_package=True)
 
     def test_classify_creates_package_name_on_first_accepted_mail(self):
-        subject = 'Accepted libosmium 2.5.3-1~exp2 (source) into experimental'
-        self.define_dak_mail(package='pkg-a', subject=subject)
+        subject = 'Accepted pkg-a 2.5.3-1~exp2 (source) into experimental'
+        self.define_dak_mail(package='pkg-a', subject=subject,
+                             dak_arch='source', dak_action='accept',
+                             dak_cmd='process-upload')
         self.run_classify()
         self.assertIsNotNone(PackageName.objects.get(name='pkg-a'))
 
     @mock.patch('distro_tracker.mail.mail_news.create_news')
     def test_classify_does_not_store_dak_binary_accepted_as_news(
             self, mock_create_news):
-        subject = 'Accepted libosmium 2.5.3-1~exp2 (i386 all) into experimental'
-        self.define_dak_mail(package='pkg-a', subject=subject)
+        subject = 'Accepted pkg-a 2.5.3-1~exp2 (i386 all) into experimental'
+        self.define_dak_mail(package='pkg-a', subject=subject,
+                             dak_arch='i386 all', dak_action='accept',
+                             dak_cmd='process-upload')
         self.run_classify()
         self.assertFalse(mock_create_news.called)
 
@@ -299,7 +313,7 @@ class DispatchDebianSpecificTest(TestCase, DispatchTestHelperMixin):
         subject = 'Bug#123: Removed package(s) from unstable'
         packages = kwargs.pop('packages', [self.package_name])
         archlist = kwargs.pop('archlist', 'source, amd64')
-        self.define_dak_mail(dak_cmd='dak rm', subject=subject, package=None,
+        self.define_dak_mail(dak_cmd='rm', subject=subject, package=None,
                              **kwargs)
         content = (
             'We believe that the bug you reported is now fixed; the following\n'
@@ -897,8 +911,10 @@ class DebianNewsFromEmailTest(TestCase):
         self.set_subject(subject)
         content = b'Content'
         self.set_message_content(content)
-        self.add_header('X-Debian-Package', self.package.name)
         self.add_header('X-Debian', 'DAK')
+        self.add_header('Debian-Source', self.package.name)
+        self.add_header('Debian-Archive-Action', 'accept')
+        self.add_header('Debian-Architecture', 'source')
 
         self.process_mail()
 
@@ -918,8 +934,10 @@ class DebianNewsFromEmailTest(TestCase):
         self.set_subject(subject)
         content = 'Content'
         self.set_message_content(content)
-        self.add_header('X-Debian-Package', 'no-exist')
         self.add_header('X-Debian', 'DAK')
+        self.add_header('Debian-Source', 'no-exist')
+        self.add_header('Debian-Archive-Action', 'accept')
+        self.add_header('Debian-Architecture', 'source')
 
         self.process_mail()
 

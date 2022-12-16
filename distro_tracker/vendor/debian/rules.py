@@ -81,19 +81,23 @@ def _classify_bts_message(msg, package, keyword):
 
 
 def _classify_dak_message(msg, package, keyword):
-    package = msg.get('X-Debian-Package', package)
     subject = msg.get('Subject', '').strip()
     xdak = msg.get('X-DAK', '')
+    package = msg.get('Debian-Source', package)
+    action = msg.get('Debian-Archive-Action', '')
+    architecture = msg.get('Debian-Architecture', '')
     body = get_message_body(msg)
-    if re.search(r'^Accepted|ACCEPTED', subject):
-        if re.search(r'^Accepted.*\(.*source.*\)', subject):
-            mail_news.create_news(msg, package, create_package=True)
-        if re.search(r'\.dsc\s*$', body, flags=re.MULTILINE):
+
+    if action == "accept":
+        if "source" in architecture:
             keyword = 'upload-source'
+            if re.search(r'^Accepted', subject):
+                mail_news.create_news(msg, package, create_package=True)
         else:
             keyword = 'upload-binary'
     else:
         keyword = 'archive'
+
     if xdak == 'dak rm':
         # Find all lines giving information about removed source packages
         re_rmline = re.compile(r"^\s*(\S+)\s*\|\s*(\S+)\s*\|\s*(.*)", re.M)
