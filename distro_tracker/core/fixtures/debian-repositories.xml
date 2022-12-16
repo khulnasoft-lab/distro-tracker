@@ -37,7 +37,7 @@
         <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="suite">unstable</field>
         <field type="CharField" name="codename">sid</field>
-        <field type="TextField" name="components">main contrib non-free</field>
+        <field type="TextField" name="components">main contrib non-free-firmware non-free</field>
         <field type="BooleanField" name="default">True</field>
         <field type="BooleanField" name="optional">False</field>
         <field type="BooleanField" name="binary">True</field>
@@ -52,7 +52,7 @@
         <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="suite">experimental</field>
         <field type="CharField" name="codename">experimental</field>
-        <field type="TextField" name="components">main contrib non-free</field>
+        <field type="TextField" name="components">main contrib non-free-firmware non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
         <field type="BooleanField" name="binary">False</field>
@@ -97,7 +97,7 @@
         <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="suite">testing</field>
         <field type="CharField" name="codename">bookworm</field>
-        <field type="TextField" name="components">main contrib non-free</field>
+        <field type="TextField" name="components">main contrib non-free-firmware non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
         <field type="BooleanField" name="binary">False</field>
