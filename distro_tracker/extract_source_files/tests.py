@@ -15,6 +15,7 @@ Tests for the :mod:`distro_tracker.extract_source_files` app.
 
 import itertools
 import os
+from pathlib import Path
 from unittest import mock
 
 from django.core.files.base import ContentFile
@@ -158,3 +159,34 @@ class ExtractSourcePackageFilesTest(TestCase):
         self.run_task()
 
         self.assertExtractedFilesInDB()
+
+    def test_task_removes_outdated_files(self, mock_cache):
+        """The task removes outdated files but keep current files."""
+        # Make a previously extracted file.
+        original_content = b'Original content'
+        extracted_file = self.srcpkg.extracted_source_files.create(
+            name='changelog',
+            extracted_file=ContentFile(original_content, name='changelog'))
+        current_path = Path(extracted_file.extracted_file.path)
+
+        # Create a similar file not tied to any ExtractedSourceFile
+        new_path = current_path.with_name('changelog-1.2.3')
+        with open(new_path, 'w') as f:
+            f.write('New file')
+
+        # Create another file not matching one of the extracted file
+        unrelated_path = current_path.with_name('somethingunrelated-1.2.3')
+        with open(unrelated_path, 'w') as f:
+            f.write('Unrelated file')
+
+        # All the files are here
+        self.assertTrue(new_path.exists())
+        self.assertTrue(current_path.exists())
+        self.assertTrue(unrelated_path.exists())
+
+        self.run_task()
+
+        # Only the file without association is gone
+        self.assertTrue(current_path.exists())
+        self.assertTrue(unrelated_path.exists())
+        self.assertFalse(new_path.exists())

@@ -13,7 +13,9 @@ files.
 """
 import logging
 import os
+from pathlib import Path
 
+from django.conf import settings
 from django.core.files import File
 
 from distro_tracker.core.models import ExtractedSourceFile
@@ -116,4 +118,32 @@ class ExtractSourcePackageFiles(BaseTask, ProcessSourcePackage):
             else:
                 self.item_mark_processed(srcpkg)
 
-        # TODO: remove extracted files associated to vanished source packages
+        # Remove extracted files associated to vanished source packages
+        qs = ExtractedSourceFile.objects.only('extracted_file')
+        extracted_files = set()
+        for esf in qs:
+            extracted_files.add(esf.extracted_file.name)
+
+        media_root = Path(settings.MEDIA_ROOT)
+        for root, dirs, files in os.walk(media_root / 'packages'):
+            relative_root = Path(root).relative_to(media_root)
+
+            for filename in files:
+                full_path = Path(root) / filename
+                relative_path = relative_root / filename
+
+                if str(relative_path) in extracted_files:
+                    # This file is referenced in the database, keep it
+                    continue
+
+                managed_file = [
+                    filename.startswith("%s-" % x)
+                    for x in self.ALL_FILES_TO_EXTRACT
+                ]
+                if not any(managed_file):
+                    # Ignore this file, it's not managed by this task
+                    logger.debug("Ignore unrelated file %s", full_path)
+                    continue
+
+                logger.info("Removing outdated file %s", full_path)
+                full_path.unlink()
