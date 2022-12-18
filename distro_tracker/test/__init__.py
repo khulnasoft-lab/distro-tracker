@@ -77,6 +77,8 @@ class TempDirsMixin(object):
     def _restore_settings(self):
         for key, value in self._settings_copy.items():
             setattr(settings, key, value)
+            setting_changed.send(sender=self.__class__, setting=key,
+                                 value=value, enter=False)
 
     def __call__(self, result=None):
         """
@@ -95,6 +97,9 @@ class TempDirsMixin(object):
             dirname = os.path.join(tempdir, dirname)
             setattr(settings, name, dirname)
             os.mkdir(dirname)
+            setting_changed.send(sender=self.__class__, setting=name,
+                                 value=dirname, enter=True)
+
         return super(TempDirsMixin, self).__call__(result)
 
 
