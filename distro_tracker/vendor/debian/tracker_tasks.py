@@ -703,7 +703,7 @@ class UpdateAppStreamStatsTask(BaseTask):
         interval = 3600 * 6
 
     ACTION_ITEM_TYPE_NAME = 'appstream-issue-hints'
-    ITEM_DESCRIPTION = 'AppStream hints: {report}'
+    ITEM_DESCRIPTION = 'AppStream hints: {report} for {packageurllist}'
     ITEM_FULL_DESCRIPTION_TEMPLATE = 'debian/appstream-action-item.html'
 
     def initialize(self, *args, **kwargs):
@@ -818,9 +818,12 @@ class UpdateAppStreamStatsTask(BaseTask):
 
         total_warnings = 0
         total_errors = 0
+        packageurllist = []
         for bin_pkgname, info in package_stats.items():
             total_warnings += info.get('warnings', 0)
             total_errors += info.get('errors', 0)
+            url = self._get_appstream_url(package, bin_pkgname)
+            packageurllist.append(f'<a href="{url}">{bin_pkgname}</a>')
 
         # Get the old action item for this warning, if it exists.
         appstream_action_item = package.get_action_item_for_type(
@@ -864,7 +867,8 @@ class UpdateAppStreamStatsTask(BaseTask):
                 's' if total_warnings > 1 else '')
 
         appstream_action_item.short_description = \
-            self.ITEM_DESCRIPTION.format(report=short_report)
+            self.ITEM_DESCRIPTION.format(packageurllist=",".join(
+                packageurllist), report=short_report)
 
         # If there are errors make the item a high severity issue;
         # otherwise, make sure to set the severity as normal in case the item
