@@ -22,6 +22,8 @@ from django.db.models.query import QuerySet
 from django.test.utils import override_settings
 
 from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
     Repository,
     SourcePackage,
     SourcePackageName,
@@ -36,6 +38,7 @@ from distro_tracker.core.tasks.base import (
     run_task,
 )
 from distro_tracker.core.tasks.mixins import (
+    ImportExternalData,
     ProcessItems,
     ProcessMainRepoEntry,
     ProcessModel,
@@ -1314,3 +1317,139 @@ class ProcessRepositoryUpdatesTests(TestCase):
 
     # TODO: implement is_new_package_in_repository(), is_new_package(),
     # iter_removals()
+
+
+class ImportExternalDataTests(TestCase):
+    def setUp(self):
+        self.data_url = 'http://example.net/data.json'
+        self.json_data = {
+            'hello': 'you',
+        }
+        attributes = {
+            'data_url': self.data_url,
+            'action_item_types': [
+                {
+                    'type_name': 'fix-a-bug',
+                    'full_description_template': 'fix-a-bug.html',
+                }
+            ],
+        }
+        self.cls = get_test_task_class('TestImportExternalData',
+                                       (ImportExternalData,),
+                                       attributes)
+        self.task = self.cls()
+        self.mock_http_request(url=self.data_url, json_data=self.json_data)
+        self.create_source_package(name='package1')
+        self.create_source_package(name='package2')
+
+    @staticmethod
+    def get_or_create_action_item_type():
+        return ActionItemType.objects.get_or_create(type_name='fix-a-bug')
+
+    def patch_generate_action_items(self, package_data=None):
+        if package_data is None:
+            package_data = {
+                'package1': {
+                    'short_description': 'Yay hello raphael',
+                    'severity': ActionItem.SEVERITY_HIGH,
+                    'extra_data': {
+                        'name': 'raphael',
+                    }
+                },
+            }
+
+        return_value = [
+            ('fix-a-bug', package_data),
+        ]
+
+        patcher = mock.patch.object(self.task, 'generate_action_items')
+        mocked = patcher.start()
+        mocked.return_value = return_value
+        self.addCleanup(patcher.stop)
+        return mocked
+
+    def test_execute_downloads_the_data(self):
+        self.task.execute()
+        self.assertEqual(self.task.external_data, self.json_data)
+
+    def test_execute_registers_action_item_types(self):
+        self.assertEqual(ActionItemType.objects.count(), 0)
+        self.task.execute()
+        action_item_type = ActionItemType.objects.get(type_name='fix-a-bug')
+        self.assertEqual(action_item_type.full_description_template,
+                         'fix-a-bug.html')
+
+    def test_execute_creates_action_items(self):
+        self.patch_generate_action_items()
+        self.assertEqual(ActionItem.objects.count(), 0)
+
+        self.task.execute()
+
+        action_item = ActionItem.objects.get(
+            item_type__type_name='fix-a-bug',
+            package__name='package1'
+        )
+        self.assertEqual(action_item.short_description, "Yay hello raphael")
+        self.assertEqual(action_item.severity, ActionItem.SEVERITY_HIGH)
+        self.assertEqual(action_item.extra_data, {'name': 'raphael'})
+
+    def test_execute_removes_action_items(self):
+        self.get_or_create_action_item_type()
+        self.patch_generate_action_items({})
+        ActionItem.objects.create_from(package='package1',
+                                       type_name='fix-a-bug')
+        self.assertEqual(ActionItem.objects.count(), 1)
+
+        self.task.execute()
+
+        self.assertEqual(ActionItem.objects.count(), 0)
+
+    def test_execute_update_action_items(self):
+        self.patch_generate_action_items()
+        self.get_or_create_action_item_type()
+        action_item = ActionItem.objects.create_from(
+            package='package1', type_name='fix-a-bug',
+            short_description='Bye bye Rey',
+            severity=ActionItem.SEVERITY_LOW,
+            extra_data={'name': 'Rey'},
+        )
+        old_timestamp = action_item.last_updated_timestamp
+
+        self.task.execute()
+
+        action_item.refresh_from_db()
+        self.assertEqual(action_item.short_description, "Yay hello raphael")
+        self.assertEqual(action_item.severity, ActionItem.SEVERITY_HIGH)
+        self.assertEqual(action_item.extra_data, {'name': 'raphael'})
+        self.assertNotEqual(action_item.last_updated_timestamp, old_timestamp)
+
+    def test_execute_does_nothing_when_data_is_unchanged(self):
+        # First normal run + remove created action items
+        self.patch_generate_action_items()
+        self.task.execute()
+        self.assertNotEqual(ActionItem.objects.count(), 0)
+        ActionItem.objects.all().delete()
+
+        # Second run with unchanged data, ActionItems are not recreated
+        # because execute() stops early in that case.
+        self.task.execute()
+        self.assertEqual(ActionItem.objects.count(), 0)
+
+    def test_execute_preserves_timestamp_for_unchanged_action_item(self):
+        # First normal run + tweak data behind URL to force a true second run
+        self.patch_generate_action_items()
+        self.task.execute()
+        self.set_http_response(url=self.data_url, json_data={})
+        # Note that the data returned by the GET is not used because
+        # we patch generate_action_items, so the empty dict means nothing
+        # special, it's just a different value compared to the default one
+        action_item = ActionItem.objects.get(
+            item_type__type_name='fix-a-bug',
+            package__name='package1'
+        )
+        old_timestamp = action_item.last_updated_timestamp
+
+        self.task.execute()
+
+        action_item.refresh_from_db()
+        self.assertEqual(action_item.last_updated_timestamp, old_timestamp)

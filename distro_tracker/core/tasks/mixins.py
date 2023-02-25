@@ -11,6 +11,8 @@
 Mixins to combine to create powerful tasks.
 
 """
+import hashlib
+import json
 import logging
 
 from debian.debian_support import version_compare
@@ -18,11 +20,16 @@ from debian.debian_support import version_compare
 from django.db import transaction
 
 from distro_tracker.core.models import (
+    ActionItem,
+    ActionItemType,
     PackageData,
+    PackageName,
     Repository,
     SourcePackage,
     SourcePackageRepositoryEntry,
 )
+from distro_tracker.core.utils import now
+from distro_tracker.core.utils.http import get_resource_text
 
 logger = logging.getLogger('distro_tracker.tasks')
 
@@ -494,3 +501,87 @@ class PackageTagging(object):
                     package=package, key=self.TAG_NAME, value=value)
                 items.append(tag)
             PackageData.objects.bulk_create(items)
+
+
+class ImportExternalData:
+    """
+    This mixin downloads an external file and process it to generate various
+    database elements like PackageData or ActionItem. You need to configure it
+    by setting many attributes.
+
+    You need to set ``data_url`` to indicate the URL where the data will be
+    downloaded.
+
+    If you want to manage ActionItem out of the generated data, you need to
+    override the ``generate_action_items`` method, it returns a list of tuples
+    where each tuple is the name of the ActionItemType and a dict mapping
+    package names to attributes of ActionItem (short_description, severity,
+    extra_data). You also need to set the ``action_item_types``
+    attribute, it is a list of dict describing the ActionItemType that have
+    to be registered. The key names are the names of the attributes of the
+    model.
+    """
+    data_url = None       # The URL where data is downloaded
+    action_item_types = []
+
+    def generate_action_items(self):
+        return []
+
+    def execute_import_external_data(self):
+        # Download the data and make it available to the various
+        # generate methods
+        url_content = get_resource_text(self.data_url,
+                                        force_update=self.force_update)
+        self.external_data = json.loads(url_content)
+
+        # If the data is unchanged since last run, do nothing
+        old_checksum = self.data.get('input_checksum')
+        checksum = hashlib.md5(
+            url_content.encode('utf-8', 'ignore')).hexdigest()
+        if checksum == old_checksum:
+            return
+        self.data['input_checksum'] = checksum
+
+        # Register the needed ActionItemType
+        for ait in self.action_item_types:
+            ActionItemType.objects.create_or_update(
+                ait['type_name'], ait['full_description_template']
+            )
+
+        # Create/update/delete the action items
+        for type_name, pkglist in self.generate_action_items():
+            ait = ActionItemType.objects.get(type_name=type_name)
+            package_name_objects = {}
+            action_item_objects = {}
+            for p in PackageName.objects.filter(name__in=pkglist.keys()):
+                package_name_objects[p.name] = p
+            qs = ActionItem.objects.filter(item_type=ait,
+                                           package__name__in=pkglist.keys())
+            for ai in qs.all():
+                action_item_objects[ai.package.name] = ai
+            to_add = []
+            to_update = []
+            for pkgname, action_item_data in pkglist.items():
+                action_item = action_item_objects.get(pkgname)
+                if action_item:
+                    updated = False
+                    for field, value in action_item_data.items():
+                        if value != getattr(action_item, field):
+                            setattr(action_item, field, value)
+                            updated = True
+                    if updated:
+                        action_item.last_updated_timestamp = now()
+                        to_update.append(action_item)
+                else:
+                    to_add.append(
+                        ActionItem(item_type=ait,
+                                   package=package_name_objects[pkgname],
+                                   **action_item_data)
+                    )
+            fields = [
+                'short_description', 'severity', 'extra_data',
+                'last_updated_timestamp'
+            ]
+            ActionItem.objects.bulk_update(to_update, fields)
+            ActionItem.objects.bulk_create(to_add)
+            ActionItem.objects.delete_obsolete_items([ait], pkglist.keys())
