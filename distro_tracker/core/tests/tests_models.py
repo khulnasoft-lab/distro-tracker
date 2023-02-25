@@ -1805,6 +1805,14 @@ class ActionItemTests(TestCase):
         self.action_type = ActionItemType.objects.create(type_name='test-type')
         self.add_test_template_dir()
 
+    def test_manager_create_from(self):
+        """Test ActionItem.objects.create_from()"""
+        action_item = ActionItem.objects.create_from(
+            package='dummy-package', type_name='test-type')
+        self.assertIsInstance(action_item, ActionItem)
+        self.assertEqual(action_item.package, self.package)
+        self.assertEqual(action_item.item_type, self.action_type)
+
     def set_action_type_template(self, template_name):
         """
         Sets the template name for the test action item type.

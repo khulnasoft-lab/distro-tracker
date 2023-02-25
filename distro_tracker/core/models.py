@@ -2040,6 +2040,11 @@ class ActionItemManager(models.Manager):
         qs = qs.exclude(package__name__in=non_obsolete_packages)
         qs.delete()
 
+    def create_from(self, package, type_name, **data):
+        pkgname = PackageName.objects.get(name=package)
+        item_type = ActionItemType.objects.get(type_name=type_name)
+        return self.create(package=pkgname, item_type=item_type, **data)
+
 
 class ActionItem(models.Model):
     """
