@@ -527,21 +527,8 @@ class ImportExternalData:
     def generate_action_items(self):
         return []
 
-    def execute_import_external_data(self):
-        # Download the data and make it available to the various
-        # generate methods
-        url_content = get_resource_text(self.data_url,
-                                        force_update=self.force_update)
-        self.external_data = json.loads(url_content)
-
-        # If the data is unchanged since last run, do nothing
-        old_checksum = self.data.get('input_checksum')
-        checksum = hashlib.md5(
-            url_content.encode('utf-8', 'ignore')).hexdigest()
-        if checksum == old_checksum:
-            return
-        self.data['input_checksum'] = checksum
-
+    @transaction.atomic
+    def _process_action_items(self):
         # Register the needed ActionItemType
         for ait in self.action_item_types:
             ActionItemType.objects.create_or_update(
@@ -585,3 +572,21 @@ class ImportExternalData:
             ActionItem.objects.bulk_update(to_update, fields)
             ActionItem.objects.bulk_create(to_add)
             ActionItem.objects.delete_obsolete_items([ait], pkglist.keys())
+
+    def execute_import_external_data(self):
+        # Download the data and make it available to the various
+        # generate methods
+        url_content = get_resource_text(self.data_url,
+                                        force_update=self.force_update)
+        self.external_data = json.loads(url_content)
+
+        # If the data is unchanged since last run, do nothing
+        old_checksum = self.data.get('input_checksum')
+        checksum = hashlib.md5(
+            url_content.encode('utf-8', 'ignore')).hexdigest()
+        if checksum == old_checksum:
+            return
+        self.data['input_checksum'] = checksum
+
+        # Process the various kind of objects that we can create
+        self._process_action_items()
