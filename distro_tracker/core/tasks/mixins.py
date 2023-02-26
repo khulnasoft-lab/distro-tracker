@@ -536,6 +536,7 @@ class ImportExternalData:
             )
 
         # Create/update/delete the action items
+        now_ts = now()
         for type_name, pkglist in self.generate_action_items():
             ait = ActionItemType.objects.get(type_name=type_name)
             package_name_objects = {}
@@ -557,7 +558,7 @@ class ImportExternalData:
                             setattr(action_item, field, value)
                             updated = True
                     if updated:
-                        action_item.last_updated_timestamp = now()
+                        action_item.last_updated_timestamp = now_ts
                         to_update.append(action_item)
                 else:
                     to_add.append(
