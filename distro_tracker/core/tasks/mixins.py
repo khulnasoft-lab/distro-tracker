@@ -561,11 +561,12 @@ class ImportExternalData:
                         action_item.last_updated_timestamp = now_ts
                         to_update.append(action_item)
                 else:
-                    to_add.append(
-                        ActionItem(item_type=ait,
-                                   package=package_name_objects[pkgname],
-                                   **action_item_data)
-                    )
+                    package_name = package_name_objects.get(pkgname)
+                    if package_name:
+                        to_add.append(
+                            ActionItem(item_type=ait, package=package_name,
+                                       **action_item_data)
+                        )
             fields = [
                 'short_description', 'severity', 'extra_data',
                 'last_updated_timestamp'
@@ -597,10 +598,12 @@ class ImportExternalData:
                         package_data.value = package_data_value
                         to_update.append(package_data)
                 else:
-                    to_add.append(
-                        PackageData(key=key, value=package_data_value,
-                                    package=package_name_objects[pkgname])
-                    )
+                    package_name = package_name_objects.get(pkgname)
+                    if package_name:
+                        to_add.append(
+                            PackageData(key=key, value=package_data_value,
+                                        package=package_name)
+                        )
             PackageData.objects.bulk_update(to_update, ['value'])
             PackageData.objects.bulk_create(to_add)
             PackageData.objects.filter(key=key).exclude(

@@ -1502,3 +1502,12 @@ class ImportExternalDataTests(TestCase):
 
         package_data.refresh_from_db()
         self.assertEqual(package_data.value, {'key': 'value'})
+
+    def test_execute_skips_unknown_packages(self):
+        package_data = {
+            'unknown-package': {},
+        }
+        self.patch_generate_package_data(package_data)
+        self.patch_generate_action_items(package_data)
+
+        self.task.execute()
