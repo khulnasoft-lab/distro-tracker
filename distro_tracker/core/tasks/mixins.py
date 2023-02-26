@@ -573,6 +573,38 @@ class ImportExternalData:
             ActionItem.objects.bulk_create(to_add)
             ActionItem.objects.delete_obsolete_items([ait], pkglist.keys())
 
+    def generate_package_data(self):
+        return []
+
+    @transaction.atomic
+    def _process_package_data(self):
+        for key, pkglist in self.generate_package_data():
+            package_name_objects = {}
+            package_data_objects = {}
+            for p in PackageName.objects.filter(name__in=pkglist.keys()):
+                package_name_objects[p.name] = p
+            qs = PackageData.objects.filter(key=key,
+                                            package__name__in=pkglist.keys())
+            for pd in qs.all():
+                package_data_objects[pd.package.name] = pd
+            to_add = []
+            to_update = []
+            for pkgname, package_data_value in pkglist.items():
+                package_data = package_data_objects.get(pkgname)
+                if package_data:
+                    if package_data.value != package_data_value:
+                        package_data.value = package_data_value
+                        to_update.append(package_data)
+                else:
+                    to_add.append(
+                        PackageData(key=key, value=package_data_value,
+                                    package=package_name_objects[pkgname])
+                    )
+            PackageData.objects.bulk_update(to_update, ['value'])
+            PackageData.objects.bulk_create(to_add)
+            PackageData.objects.filter(key=key).exclude(
+                package__name__in=pkglist.keys()).delete()
+
     def execute_import_external_data(self):
         # Download the data and make it available to the various
         # generate methods
@@ -590,3 +622,4 @@ class ImportExternalData:
 
         # Process the various kind of objects that we can create
         self._process_action_items()
+        self._process_package_data()

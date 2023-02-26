@@ -24,6 +24,7 @@ from django.test.utils import override_settings
 from distro_tracker.core.models import (
     ActionItem,
     ActionItemType,
+    PackageData,
     Repository,
     SourcePackage,
     SourcePackageName,
@@ -1339,12 +1340,24 @@ class ImportExternalDataTests(TestCase):
                                        attributes)
         self.task = self.cls()
         self.mock_http_request(url=self.data_url, json_data=self.json_data)
-        self.create_source_package(name='package1')
+        self.package1 = self.create_source_package(
+            name='package1').source_package_name
         self.create_source_package(name='package2')
 
     @staticmethod
     def get_or_create_action_item_type():
         return ActionItemType.objects.get_or_create(type_name='fix-a-bug')
+
+    def patch_generator(self, method, type_name, package_data):
+        return_value = [
+            (type_name, package_data),
+        ]
+
+        patcher = mock.patch.object(self.task, method)
+        mocked = patcher.start()
+        mocked.return_value = return_value
+        self.addCleanup(patcher.stop)
+        return mocked
 
     def patch_generate_action_items(self, package_data=None):
         if package_data is None:
@@ -1358,15 +1371,19 @@ class ImportExternalDataTests(TestCase):
                 },
             }
 
-        return_value = [
-            ('fix-a-bug', package_data),
-        ]
+        return self.patch_generator('generate_action_items', 'fix-a-bug',
+                                    package_data)
 
-        patcher = mock.patch.object(self.task, 'generate_action_items')
-        mocked = patcher.start()
-        mocked.return_value = return_value
-        self.addCleanup(patcher.stop)
-        return mocked
+    def patch_generate_package_data(self, package_data=None):
+        if package_data is None:
+            package_data = {
+                'package1': {
+                    'key': 'value',
+                },
+            }
+
+        return self.patch_generator('generate_package_data', 'data-key',
+                                    package_data)
 
     def test_execute_downloads_the_data(self):
         self.task.execute()
@@ -1453,3 +1470,35 @@ class ImportExternalDataTests(TestCase):
 
         action_item.refresh_from_db()
         self.assertEqual(action_item.last_updated_timestamp, old_timestamp)
+
+    def test_execute_creates_package_data(self):
+        self.patch_generate_package_data()
+        self.assertEqual(PackageData.objects.count(), 0)
+
+        self.task.execute()
+
+        package_data = PackageData.objects.get(
+            package__name='package1',
+            key='data-key',
+        )
+        self.assertEqual(package_data.value, {'key': 'value'})
+
+    def test_execute_removes_package_data(self):
+        self.patch_generate_package_data({})
+        PackageData.objects.create(package=self.package1, key='data-key',
+                                   value={})
+        self.assertEqual(PackageData.objects.count(), 1)
+
+        self.task.execute()
+
+        self.assertEqual(PackageData.objects.count(), 0)
+
+    def test_execute_updates_package_data(self):
+        self.patch_generate_package_data()
+        package_data = PackageData.objects.create(package=self.package1,
+                                                  key='data-key', value={})
+
+        self.task.execute()
+
+        package_data.refresh_from_db()
+        self.assertEqual(package_data.value, {'key': 'value'})
