@@ -1,0 +1,17 @@
+{% with total_count=item.extra_data.patches invalid_count=item.extra_data.forwarded_invalid to_forward_count=item.extra_data.forwarded_no %}
+<p>Among the <a href="{{ item.extra_data.url }}">{{ total_count }} debian {{ total_count|pluralize:"patch,patches" }}</a>
+available in version {{ item.extra_data.version }} of the package,
+we noticed the following issues:</p>
+<ul>
+{% if invalid_count > 0 %}
+<li>{{ invalid_count }} {{ invalid_count|pluralize:"patch,patches" }} with
+    invalid metadata that ought to be fixed.
+{% endif %}
+{% if to_forward_count > 0 %}
+<li>{{ to_forward_count }} {{ to_forward_count|pluralize:"patch,patches" }}
+    where the metadata indicates that the patch has not yet been forwarded
+    upstream. You should either forward the patch upstream or update the
+    metadata to document its real status.</li>
+{% endif %}
+</ul>
+{% endwith %}

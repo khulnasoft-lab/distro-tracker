@@ -27,6 +27,7 @@ from django.core import mail
 from django.core.management import call_command
 from django.test.utils import override_settings
 from django.urls import reverse
+from django.utils.html import strip_tags
 
 import responses
 
@@ -80,6 +81,9 @@ from distro_tracker.vendor.debian.sso_auth import DebianSsoUserBackend
 from distro_tracker.vendor.debian.tracker_package_tables import (
     UpstreamTableField,
 )
+from distro_tracker.vendor.debian.tracker_panels import (
+    DebianPatchesLink,
+)
 from distro_tracker.vendor.debian.tracker_tasks import (
     DebianWatchFileScannerUpdate,
     RetrieveDebianMaintainersTask,
@@ -91,6 +95,7 @@ from distro_tracker.vendor.debian.tracker_tasks import (
     UpdateBuildDependencySatisfactionTask,
     UpdateBuildLogCheckStats,
     UpdateBuildReproducibilityTask,
+    UpdateDebianPatchesTask,
     UpdateDependencySatisfactionTask,
     UpdateDl10nStatsTask,
     UpdateExcusesTask,
@@ -6714,3 +6719,153 @@ class UpdateDl10nStatsTaskTest(TestCase):
         # There are no action items any longer.
         self.assertEqual(0, self.package_name.action_items.count())
         self.assertEqual(0, ActionItem.objects.count())
+
+
+class UpdateDebianPatchesTests(TestCase):
+    """
+    Tests for the
+    :class:`distro_tracker.vendor.debian.tracker_tasks.UpdateDebianPatchesTask`
+    task.
+    """
+
+    def setUp(self):
+        self.task = UpdateDebianPatchesTask()
+        self.mock_http_request(url=self.task.data_url)
+
+    def reset_external_data(self):
+        self.task.external_data = []
+
+    def add_external_data(self, package, yes=0, no=0, not_needed=0, invalid=0):
+        total = yes + no + not_needed + invalid
+        entry = {
+            'source': package,
+            'version': '0.1',
+            'status': 'patches' if total else 'no-patch',
+            'patches': total,
+            'forwarded_yes': yes,
+            'forwarded_no': no,
+            'forwarded_not_needed': not_needed,
+            'forwarded_invalid': invalid,
+        }
+        self.task.external_data.append(entry)
+        SourcePackageName.objects.get_or_create(name=package)
+        # Also mock the HTTP request
+        self.set_http_response(url=self.task.data_url,
+                               json_data=self.task.external_data)
+
+    def set_external_data(self, package, **kwargs):
+        self.reset_external_data()
+        self.add_external_data(package, **kwargs)
+
+    def test_task_has_basic_fields_for_import_external_data(self):
+        self.assertIsNotNone(self.task.data_url)
+        self.assertEqual(self.task.action_item_types[0]['type_name'],
+                         'debian-patches')
+
+    def test_generate_package_data(self):
+        self.set_external_data('package1')
+
+        result = self.task.generate_package_data()
+        key, all_data = result[0]
+
+        self.assertEqual(key, 'debian-patches')
+        package_data = all_data.get('package1')
+        self.assertIsNotNone(package_data)
+        self.assertEqual(package_data['status'], 'no-patch')
+        self.assertEqual(package_data['patches'], 0)
+        self.assertIn('url', package_data)
+
+    def test_generate_action_item_for_invalid_patches(self):
+        self.set_external_data('package1', invalid=1)
+
+        result = self.task.generate_action_items()
+        type_name, all_data = result[0]
+
+        self.assertEqual(type_name, 'debian-patches')
+        action_item_data = all_data.get('package1')
+        self.assertIsNotNone(action_item_data)
+        self.assertEqual(strip_tags(action_item_data['short_description']),
+                         'debian/patches: 1 patch with invalid metadata')
+        self.assertEqual(action_item_data['severity'], ActionItem.SEVERITY_HIGH)
+        self.assertTrue(
+            action_item_data['extra_data']['url'].startswith('https://'))
+
+    def test_generate_action_item_for_non_forwarded_patches(self):
+        self.set_external_data('package1', no=1)
+
+        result = self.task.generate_action_items()
+        type_name, all_data = result[0]
+
+        self.assertEqual(type_name, 'debian-patches')
+        action_item_data = all_data.get('package1')
+        self.assertIsNotNone(action_item_data)
+        self.assertEqual(strip_tags(action_item_data['short_description']),
+                         'debian/patches: 1 patch to forward upstream')
+        self.assertEqual(action_item_data['severity'], ActionItem.SEVERITY_LOW)
+
+    def test_generate_action_item_for_non_problematic_patches(self):
+        self.set_external_data('package1', yes=1, not_needed=1)
+
+        result = self.task.generate_action_items()
+        type_name, all_data = result[0]
+
+        self.assertEqual(type_name, 'debian-patches')
+        action_item_data = all_data.get('package1')
+        self.assertIsNone(action_item_data)
+
+    def test_generate_action_item_with_both_issues_and_plural_form(self):
+        self.set_external_data('package1', invalid=2, no=3)
+
+        result = self.task.generate_action_items()
+        type_name, all_data = result[0]
+
+        self.assertEqual(type_name, 'debian-patches')
+        action_item_data = all_data.get('package1')
+        self.assertIsNotNone(action_item_data)
+        self.assertEqual(strip_tags(action_item_data['short_description']),
+                         'debian/patches: 2 patches with invalid metadata, '
+                         '3 patches to forward upstream')
+        self.assertEqual(action_item_data['severity'], ActionItem.SEVERITY_HIGH)
+
+    def test_execute(self):
+        self.set_external_data('package1', invalid=2, no=3)
+
+        self.task.execute()
+
+        ActionItem.objects.get(item_type__type_name='debian-patches',
+                               package__name='package1')
+        PackageData.objects.get(key='debian-patches',
+                                package__name='package1')
+
+
+class DebianPatchesLinkTests(TestCase):
+    """Tests for the DebianPatchesLink LinksPanel.ItemProvider."""
+
+    def setUp(self):
+        self.package = PackageName.objects.create(
+            source=True, name='dummy-package')
+        self.link_provider = DebianPatchesLink(self.package)
+
+    def create_patches_data(self, patch_count=2):
+        data = {
+            'patches': patch_count,
+            'url': '@URL@',
+        }
+        self.package.data.create(key='debian-patches', value=data)
+
+    def test_no_patch_data(self):
+        result = self.link_provider.get_panel_items()
+        self.assertIsNone(result)
+
+    def test_patch_data_with_zero_patches(self):
+        self.create_patches_data(patch_count=0)
+        result = self.link_provider.get_panel_items()
+        self.assertIsNone(result)
+
+    def test_patch_data_with_patches(self):
+        self.create_patches_data(patch_count=2)
+
+        link = self.link_provider.get_panel_items()[0]
+
+        self.assertIn('debian patches', link.html_output)
+        self.assertIn('@URL@', link.html_output)

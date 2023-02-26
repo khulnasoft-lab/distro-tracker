@@ -620,7 +620,7 @@ class ImportExternalData:
         old_checksum = self.data.get('input_checksum')
         checksum = hashlib.md5(
             url_content.encode('utf-8', 'ignore')).hexdigest()
-        if checksum == old_checksum:
+        if checksum == old_checksum and not self.force_update:
             return
         self.data['input_checksum'] = checksum
 

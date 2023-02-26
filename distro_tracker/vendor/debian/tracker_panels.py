@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2013 The Distro Tracker Developers
+# Copyright 2013-2023 The Distro Tracker Developers
 # See the COPYRIGHT file at the top-level directory of this distribution and
 # at https://deb.li/DTAuthors
 #
@@ -403,4 +403,26 @@ class Dl10nLinks(LinksPanel.ItemProvider):
             TemplatePanelItem('debian/dl10n-links.html', {
                 'dl10n_stats': dl10n_stats,
             })
+        ]
+
+
+class DebianPatchesLink(LinksPanel.ItemProvider):
+    def get_panel_items(self):
+        try:
+            data = self.package.data.get(key='debian-patches').value
+        except PackageData.DoesNotExist:
+            return
+
+        count = data.get('patches', 0)
+        if count == 0:
+            return
+
+        link_title = f'{count} patch'
+        if count > 1:
+            link_title += 'es'
+        link_title += ' in debian/patches'
+
+        return [
+            LinksPanel.SimpleLinkItem('debian patches', data.get('url'),
+                                      title=link_title),
         ]

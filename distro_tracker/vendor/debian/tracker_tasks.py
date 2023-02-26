@@ -50,7 +50,7 @@ from distro_tracker.core.models import (
     SourcePackageName
 )
 from distro_tracker.core.tasks import BaseTask
-from distro_tracker.core.tasks.mixins import PackageTagging
+from distro_tracker.core.tasks.mixins import ImportExternalData, PackageTagging
 from distro_tracker.core.tasks.schedulers import IntervalScheduler
 from distro_tracker.core.utils import get_or_none
 from distro_tracker.core.utils.http import get_resource_text
@@ -3421,3 +3421,87 @@ class UpdateDl10nStatsTask(BaseTask):
             ActionItem.objects.delete_obsolete_items(
                 [self.l10n_action_item_type], packages)
             PackageData.objects.bulk_create(pkgdata_list)
+
+
+class UpdateDebianPatchesTask(BaseTask, ImportExternalData):
+    """
+    Import statistics about Debian patches from UDD.
+    """
+
+    class Scheduler(IntervalScheduler):
+        interval = 3600 * 6
+
+    data_url = 'https://udd.debian.org/patches.cgi?json=1'
+    action_item_types = [
+        {
+            'type_name': 'debian-patches',
+            'full_description_template':
+                'debian/debian-patches-action-item.html',
+        },
+    ]
+
+    def generate_package_data(self):
+        pkgdata = {}
+        for entry in self.external_data:
+            source = entry.get('source')
+            if source:
+                data = entry.copy()
+                data['url'] = self._generate_url(entry)
+                pkgdata[source] = data
+
+        return [
+            ('debian-patches', pkgdata),
+        ]
+
+    @staticmethod
+    def _generate_url(entry):
+        url = "https://udd.debian.org/patches.cgi?src={src}&version={version}"
+        return url.format(src=entry.get('source'), version=entry.get('version'))
+
+    def generate_action_items(self):
+        pkgdata = {}
+        for entry in self.external_data:
+            # Skip invalid entries and those without problematic patches
+            source = entry.get('source')
+            forwarded_invalid = entry.get('forwarded_invalid', 0)
+            forwarded_no = entry.get('forwarded_no', 0)
+            if not source:
+                continue
+            if forwarded_invalid == 0 and forwarded_no == 0:
+                continue
+
+            # Build the parameterers for the action item
+            severity = ActionItem.SEVERITY_LOW
+            desc = ''
+            url = self._generate_url(entry)
+
+            if forwarded_invalid:
+                severity = ActionItem.SEVERITY_HIGH
+                count = f"{forwarded_invalid} patch"
+                if forwarded_invalid > 1:
+                    count += 'es'
+                count = f'<a href="{url}">{count}</a>'
+                desc += f"{count} with invalid metadata"
+
+            if forwarded_no:
+                if desc:
+                    desc += ', '
+                count = f"{forwarded_no} patch"
+                if forwarded_no > 1:
+                    count += 'es'
+                count = f'<a href="{url}">{count}</a>'
+                desc += f"{count} to forward upstream"
+
+            extra_data = entry.copy()
+            extra_data['url'] = url
+
+            # Record the action item parameters
+            pkgdata[source] = {
+                'short_description': f"debian/patches: {desc}",
+                'severity': severity,
+                'extra_data': extra_data,
+            }
+
+        return [
+            ('debian-patches', pkgdata),
+        ]
