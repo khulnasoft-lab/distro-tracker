@@ -3461,14 +3461,16 @@ class UpdateDebianPatchesTask(BaseTask, ImportExternalData):
     def generate_action_items(self):
         pkgdata = {}
         for entry in self.external_data:
-            # Skip invalid entries and those without problematic patches
+            # Skip invalid entries and those without (problematic) patches
             source = entry.get('source')
             forwarded_invalid = entry.get('forwarded_invalid', 0)
             forwarded_no = entry.get('forwarded_no', 0)
             if not source:
-                continue
+                continue  # Invalid, no source package data
+            if entry.get('status') != 'patches':
+                continue  # No patch at all
             if forwarded_invalid == 0 and forwarded_no == 0:
-                continue
+                continue  # No problematic patch
 
             # Build the parameterers for the action item
             severity = ActionItem.SEVERITY_LOW

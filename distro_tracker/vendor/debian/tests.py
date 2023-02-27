@@ -6735,18 +6735,31 @@ class UpdateDebianPatchesTests(TestCase):
     def reset_external_data(self):
         self.task.external_data = []
 
-    def add_external_data(self, package, yes=0, no=0, not_needed=0, invalid=0):
-        total = yes + no + not_needed + invalid
-        entry = {
-            'source': package,
-            'version': '0.1',
-            'status': 'patches' if total else 'no-patch',
-            'patches': total,
-            'forwarded_yes': yes,
-            'forwarded_no': no,
-            'forwarded_not_needed': not_needed,
-            'forwarded_invalid': invalid,
-        }
+    def add_external_data(self, package, yes=0, no=0, not_needed=0, invalid=0,
+                          other_format=False):
+        if other_format:
+            entry = {
+                'source': package,
+                'version': '0.1',
+                'status': 'other format',
+                'patches': None,
+                'forwarded_yes': None,
+                'forwarded_no': None,
+                'forwarded_not_needed': None,
+                'forwarded_invalid': None,
+            }
+        else:
+            total = yes + no + not_needed + invalid
+            entry = {
+                'source': package,
+                'version': '0.1',
+                'status': 'patches' if total else 'no-patch',
+                'patches': total,
+                'forwarded_yes': yes,
+                'forwarded_no': no,
+                'forwarded_not_needed': not_needed,
+                'forwarded_invalid': invalid,
+            }
         self.task.external_data.append(entry)
         SourcePackageName.objects.get_or_create(name=package)
         # Also mock the HTTP request
@@ -6805,6 +6818,16 @@ class UpdateDebianPatchesTests(TestCase):
 
     def test_generate_action_item_for_non_problematic_patches(self):
         self.set_external_data('package1', yes=1, not_needed=1)
+
+        result = self.task.generate_action_items()
+        type_name, all_data = result[0]
+
+        self.assertEqual(type_name, 'debian-patches')
+        action_item_data = all_data.get('package1')
+        self.assertIsNone(action_item_data)
+
+    def test_generate_action_item_for_other_source_package_format(self):
+        self.set_external_data('package1', other_format=True)
 
         result = self.task.generate_action_items()
         type_name, all_data = result[0]
