@@ -1449,6 +1449,7 @@ class ImportExternalDataTests(TestCase):
 
         # Second run with unchanged data, ActionItems are not recreated
         # because execute() stops early in that case.
+        self.task = self.cls()
         self.task.execute()
         self.assertEqual(ActionItem.objects.count(), 0)
 
@@ -1466,6 +1467,7 @@ class ImportExternalDataTests(TestCase):
         )
         old_timestamp = action_item.last_updated_timestamp
 
+        self.task = self.cls()
         self.task.execute()
 
         action_item.refresh_from_db()
