@@ -3455,8 +3455,11 @@ class UpdateDebianPatchesTask(BaseTask, ImportExternalData):
 
     @staticmethod
     def _generate_url(entry):
-        url = "https://udd.debian.org/patches.cgi?src={src}&version={version}"
-        return url.format(src=entry.get('source'), version=entry.get('version'))
+        query_string = urlencode({
+            'src': entry.get('source'),
+            'version': entry.get('version'),
+        })
+        return f"https://udd.debian.org/patches.cgi?{query_string}"
 
     def generate_action_items(self):
         pkgdata = {}

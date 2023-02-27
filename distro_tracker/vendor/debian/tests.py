@@ -6740,7 +6740,7 @@ class UpdateDebianPatchesTests(TestCase):
         if other_format:
             entry = {
                 'source': package,
-                'version': '0.1',
+                'version': '1:0.1-1+deb10u2',
                 'status': 'other format',
                 'patches': None,
                 'forwarded_yes': None,
@@ -6752,7 +6752,7 @@ class UpdateDebianPatchesTests(TestCase):
             total = yes + no + not_needed + invalid
             entry = {
                 'source': package,
-                'version': '0.1',
+                'version': '1:0.1-1+deb10u2',
                 'status': 'patches' if total else 'no-patch',
                 'patches': total,
                 'forwarded_yes': yes,
@@ -6787,6 +6787,17 @@ class UpdateDebianPatchesTests(TestCase):
         self.assertEqual(package_data['status'], 'no-patch')
         self.assertEqual(package_data['patches'], 0)
         self.assertIn('url', package_data)
+
+    def test_url_for_packages_with_special_characters(self):
+        self.set_external_data('g++')
+
+        result = self.task.generate_package_data()
+        _, all_data = result[0]
+
+        # Ensure we find url encoded versions of the package name and version
+        package_data = all_data.get('g++')
+        self.assertIn('g%2B%2B', package_data['url'])
+        self.assertIn('1%3A0.1-1%2Bdeb10u2', package_data['url'])
 
     def test_generate_action_item_for_invalid_patches(self):
         self.set_external_data('package1', invalid=1)
