@@ -51,7 +51,7 @@
         <field type="CharField" name="uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="public_uri">https://deb.debian.org/debian</field>
         <field type="CharField" name="suite">experimental</field>
-        <field type="CharField" name="codename">experimental</field>
+        <field type="CharField" name="codename">rc-buggy</field>
         <field type="TextField" name="components">main contrib non-free-firmware non-free</field>
         <field type="BooleanField" name="default">False</field>
         <field type="BooleanField" name="optional">False</field>
