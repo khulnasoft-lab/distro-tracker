@@ -8,6 +8,7 @@
 # including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.core` app."""
+import edlib
 import importlib
 
 from django.conf import settings
@@ -136,7 +137,7 @@ class PackageAutocompleteView(View):
     A view which responds to package auto-complete queries.
 
     Renders a JSON list of package names matching the given query, meaning
-    their name starts with the given query parameter.
+    their name contains the given query parameter.
     """
     @method_decorator(cache_control(must_revalidate=True, max_age=3600))
     def get(self, request):
@@ -156,13 +157,21 @@ class PackageAutocompleteView(View):
         )
         filtered = filtered.filter(name__icontains=query_string)
         # Extract only the name of the package.
-        filtered = filtered.values('name')
+        filtered = filtered.values_list('name', flat=True)
         # Limit the number of packages returned from the autocomplete
         AUTOCOMPLETE_ITEMS_LIMIT = 100
         filtered = filtered[:AUTOCOMPLETE_ITEMS_LIMIT]
+
+        def distance(word1, word2):
+            return edlib.align(word1, word2)['editDistance']
+
+        # Sort alphabetically so the sorting by distance keeps alphabetical
+        # order in case of same-distance package names
+        package_names = sorted(filtered)
+        package_names.sort(key=lambda name: distance(query_string, name))
+
         return render_to_json_response([query_string,
-                                        [package['name']
-                                         for package in filtered]])
+                                        package_names])
 
 
 def news_page(request, news_id, slug=''):

@@ -19,7 +19,7 @@ if [ ! -e distro_tracker/project/settings/local.py.sample-debian-dev ]; then
 fi
 
 echo ">>> Ensuring we have the required packages"
-packages="python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium-driver"
+packages="python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-pyinotify python3-selenium python3-edlib chromium-driver"
 if ! dpkg-query -W $packages >/dev/null; then
     echo ">>> Installing the required packages with “sudo apt install”"
     sudo apt install $packages
