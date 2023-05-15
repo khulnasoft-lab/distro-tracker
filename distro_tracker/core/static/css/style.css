@@ -1,5 +1,10 @@
 @charset "utf-8";
 
+html {
+  position: relative;
+  min-height: 100%;
+}
+
 body {
     font-family: "DejaVu Sans","Bitstream Vera Sans",sans-serif;
     color: #000;
@@ -364,4 +369,10 @@ td span#bugs-field a{
 
 .table-page .package-table .panel-heading span.octicon{
   display: none;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
 }
