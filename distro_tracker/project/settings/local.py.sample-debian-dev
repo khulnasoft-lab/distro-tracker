@@ -10,7 +10,7 @@ from .debian import *
 from .db_sqlite import DATABASES
 
 # Disable some production settings
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['0.0.0.0']
 
 try:
     # Drop distro_tracker.extract_source_files as it takes way too much time

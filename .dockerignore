@@ -1,0 +1,6 @@
+.git
+.cache
+*.md
+debian
+MANIFEST.in
+.gitlab-ci.yml
