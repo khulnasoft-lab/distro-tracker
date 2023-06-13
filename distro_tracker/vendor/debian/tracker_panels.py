@@ -414,7 +414,7 @@ class DebianPatchesLink(LinksPanel.ItemProvider):
             return
 
         count = data.get('patches', 0)
-        if count == 0:
+        if count == 0 or count is None:
             return
 
         link_title = f'{count} patch'
