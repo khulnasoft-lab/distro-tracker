@@ -1,3 +1,105 @@
+distro-tracker (1.2.0) unstable; urgency=medium
+
+  [ Raphaël Hertzog ]
+  * Bump minimal Django version in Build-Depends
+  * vendor/kali: update classification rules for GitLab incoming emails
+  * news: show signer email when signer name is empty
+  * Use a noreply email for registration confirmation to avoid getting too many useless bounces
+  * Rename issue-list.html template with a more explicit name
+  * Improve the wording of a message in the security tracker action item
+  * Ensure --force-update has an effect on UpdateSecurityIssuesTask
+  * Add python3-responses as new test dependency
+  * Mock HTTP requests with "responses" in UpdateSecurityIssuesTaskTests
+  * Factor out logic whether an action item is desired or not
+  * Handle security issues according to each release status (1)
+  * Handle security issues according to each release status (2)
+  * Handle security issues according to each release status (3)
+  * Handle security issues according to each release status (4)
+  * Handle security issues according to each release status (5)
+  * Fix various issues spotted by flake8
+  * tox: expand test coverage to Python 3.9 and Django 3.2
+  * Switch to lintian.debian.net
+  * Add another onion name on request of Peter Palfrader
+  * accounts: use the correct attributes for the confirmation mixin
+  * accounts: use noreply email for more automatic mails
+  * Run the UpdateExcusesTask in a transaction
+  * Define DEFAULT_AUTO_FIELD for Django 3.2
+  * Implement get_compressor_factory() to help compress data
+  * Make it possible to not invalidate the cache on error
+  * Refactor custom mock_http_request framework to be built on top of `responses`
+  * Replace "text" and "content" keyword arguments of set_http_get_response by "body"
+  * Extend test API to mock HTTP requests other than GET
+  * New create_repository() test helper method
+  * Implement mock_apt_repository() test helper
+  * Cleanup the API documentation
+  * Simplify and update fixture with debian repositories
+  * Tweak the order of the uids in the test key
+  * Fix a link in the contributing page
+  * Adjust debianbts usage to avoid deprecation messages
+  * Adjust apt_pkg's usage for version in Debian 11 bullseye
+  * Increase allowed length for the name of transitions
+  * Fix links in contributing documentation
+  * Use explicit captions for toctrees
+  * Fix one more way to create duplicate UserEmail
+  * Fix error in chrome driver startup
+  * Do not use xvfb since we use --headless in test suite
+  * Switch lintian data source to udd
+  * Get rid of the link to lintian.debian.org for now
+  * Ensure we are able to extract the signature from the message body
+  * Use external logrotation combined with WatchedFileHandler
+  * Update some versions in tox.ini
+  * Deal with leading spaces/linefeeds in subjects
+  * Use new DAK headers to identify "Accepted" mails
+  * Add the new non-free-firmware section in some fixtures
+  * Remove outdated extracted files in the task
+  * test: properly reset cached values when overriding settings
+  * Add ActionItem.objects.create_from()
+  * Create new ImportExternalData task mixin
+  * Refactor code processing action items in a private method
+  * Extend ImportExternalData to also generate PackageData
+  * Use the same timestamp for all ActionItem updated in the same run
+  * ImportExternalData: fix handling of unknown packages
+  * Implement action items and links for UDD's export of debian-patches
+    (Closes: #1031780)
+  * debian-patches: ignore entries for source package formats without patches
+  * debian-patches: properly urlencode the package name and version
+  * Recreate the task before second run to start with fresh data
+  * Avoid errors in patches panel generation when patches is None
+
+  [ Antonio Terceiro ]
+  * package page: show package name first in title
+
+  [ Carles Pina i Estany ]
+  * Delete incomplete template tag
+  * Improve the security issues action item
+  * Fix JSON rendered on the /pkg/{package} if a security issue had empty description
+  * Change link to the new security-team web for low priority issues
+  * Properly deal with multipart signed messages in EmailNews
+
+  [ Felix Lechner ]
+  * At last, Lintian data is served from debian.org again; new url for qa.list in /static.
+
+  [ Neil Williams ]
+  * Update the CI to a bullseye docker
+  * Replace expired GPG keys supporting unit tests
+
+  [ Mattia Rizzolo ]
+  * use explicit querystring variable name, for clarity
+
+  [ Pino Toscano ]
+  * debian: drop the outdated clang service
+
+  [ TrellixVulnTeam ]
+  * Adding tarfile member sanitization to extractall()
+
+  [ Petter Reinholdtsen ]
+  * Made appstream issue lists easier available in package tracker page
+
+  [ Paul Wise ]
+  * Update for change of experimental codename to rc-buggy
+
+ -- Raphaël Hertzog <hertzog@debian.org>  Thu, 15 Jun 2023 16:05:16 +0200
+
 distro-tracker (1.1.3) unstable; urgency=medium
 
   [ Raphaël Hertzog ]
