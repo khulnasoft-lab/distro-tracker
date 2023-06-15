@@ -37,7 +37,8 @@ Depends: python3,
     gunicorn3 | libapache2-mod-wsgi-py3,
     ${python3:Depends},
     ${misc:Depends}
-Recommends: postgresql
+Recommends: postgresql,
+    dpkg-dev
 Description: follow the status of packages of a Debian-based distribution
  Distro Tracker offers a web interface to display an overview of each source
  package provided as well as an email interface to be notified of changes
