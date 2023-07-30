@@ -28,6 +28,7 @@ from distro_tracker.core.models import (
     Subscription,
     get_web_package
 )
+from distro_tracker.core.package_tables import create_table
 from distro_tracker.core.utils import (
     distro_tracker_render_to_string,
     render_to_json_response
@@ -168,6 +169,28 @@ class SubscriptionsView(LoginRequiredMixin, View):
         return render(request, self.template_name, {
             'subscriptions': subscriptions,
             'selected_emails': request.session['selected_emails']
+        })
+
+
+class SubscriptionsTableView(LoginRequiredMixin, View):
+    """
+    Displays a user's subscribed packages.
+
+    This only includes direct package subscriptions.
+    """
+    template_name = 'accounts/subscriptions-table.html'
+
+    def _create_tables(self, user):
+        return [
+            create_table(
+                slug='general', scope=user, title='Subscribed Packages'),
+            create_table(slug='general', scope=user, tag='tag:bugs'),
+        ]
+
+    def get(self, request):
+        user = request.user
+        return render(request, self.template_name, {
+            'tables': self._create_tables(user)
         })
 
 

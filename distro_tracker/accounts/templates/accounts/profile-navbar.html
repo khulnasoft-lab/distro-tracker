@@ -7,6 +7,9 @@
       <li class="nav-item {% if active_element == 'subscriptions' %}active{% endif %}">
         <a class="nav-link" href="{% url 'dtracker-accounts-subscriptions' %}">Subscriptions</a>
       </li>
+      <li class="nav-item {% if active_element == 'subscriptions-table' %}active{% endif %}">
+        <a class="nav-link" href="{% url 'dtracker-accounts-subscriptions-table' %}">Packages Table</a>
+      </li>
       <li class="nav-item {% if active_element == 'change-profile' %}active{% endif %}">
         <a class="nav-link" href="{% url 'dtracker-accounts-profile-modify' %}">Personal Information</a>
       </li>

@@ -1,0 +1,34 @@
+{% extends 'core/base.html' %}
+{% load staticfiles %}
+{% load distro_tracker_extras %}
+{% block title %}Subscriptions Table | {{ block.super }}{% endblock %}
+
+{% block extra-js %}
+        <script src="{% static 'accounts/js/profile.js' %}"></script>
+        <script type="text/x-dtracker-url" id="unsubscribe-url">{% url 'dtracker-api-accounts-unsubscribe' %}</script>
+        <script type="text/x-dtracker-url" id="unsubscribe-all-url">{% url 'dtracker-api-accounts-unsubscribe-all' %}</script>
+        <script type="text/x-dtracker-url" id="all-keywords-url">{% url 'dtracker-api-keywords' %}</script>
+        <script type="text/x-dtracker-url" id="update-keywords-url">{% url 'dtracker-api-accounts-profile-keywords' %}</script>
+{% endblock %}
+
+{% block content %}
+
+{% include 'accounts/profile-navbar.html' with active_element='subscriptions-table' %}
+
+<div class="package-tables m-y-1">
+  <div class="row">
+    <div class="col-md-12 team-tables" id="dtracker-package-center">
+      {% for table in tables %}
+      {% with rows_length=table.rows|length %}
+      {% if table.number_of_packages > rows_length %}
+      {% include 'core/package-table.html' with table=table show_link=1 %}
+      {% else %}
+      {% include 'core/package-table.html' with table=table %}
+      {% endif %}
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

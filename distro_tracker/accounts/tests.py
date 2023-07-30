@@ -22,7 +22,7 @@ from distro_tracker.core.models import (
     SourcePackageName,
     Subscription
 )
-from distro_tracker.test import TestCase
+from distro_tracker.test import TestCase, UserAuthMixin
 
 
 class UserManagerTests(TestCase):
@@ -99,6 +99,23 @@ class UserTests(TestCase):
         self.user = User.objects.create_user(
             main_email=self.main_email, password='asdf')
         self.package = PackageName.objects.create(name='dummy-package')
+
+    def test_packages_property_based_on_subscriptions(self):
+        """
+        Tests the
+        :meth:`packages
+        <distro_tracker.accounts.models.User.packages>`
+        method when the user is subscribed to the package with their
+        main email.
+        """
+        self.assertEqual(len(self.user.packages), 0)
+
+        email = self.user.emails.all()[0]
+        Subscription.objects.create_for(
+            email=email.email,
+            package_name=self.package.name)
+        self.assertEqual(len(self.user.packages), 1)
+        self.assertIn(self.package, self.user.packages)
 
     def test_is_subscribed_to_main_email(self):
         """
@@ -252,6 +269,51 @@ class SubscriptionsViewTests(TestCase):
             self.assertEqual(
                 [package.name],
                 [sub.package.name for sub in entry['subscriptions']])
+
+
+class SubscriptionsTableViewTests(UserAuthMixin, TestCase):
+    """
+    Tests the :class:`distro_tracker.accounts.SubscriptionsTableView`.
+    """
+    def setUp(self):
+        self.setup_users(login=True)
+        self.package_name = PackageName.objects.create(name='dummy-package')
+        self.user = self.current_user
+
+    def get_subscriptions_table_view(self):
+        return self.client.get(reverse('dtracker-accounts-subscriptions-table'))
+
+    def subscribe_email_to_package(self, email, package_name):
+        Subscription.objects.create_for(
+            email=email,
+            package_name=package_name.name)
+
+    def test_no_subscriptions(self):
+        """
+        Tests the scenario where the user has no subscriptions.
+        """
+        response = self.get_subscriptions_table_view()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'accounts/subscriptions-table.html')
+        table = response.context['tables'][0]
+        self.assertEqual(len(table.rows), 0)
+        self.assertEqual(table.title, "Subscribed Packages")
+
+    def test_with_subscriptions(self):
+        """
+        Tests the scenario where the user has subscriptions.
+        """
+        self.subscribe_email_to_package(self.user.main_email, self.package_name)
+
+        response = self.get_subscriptions_table_view()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'accounts/subscriptions-table.html')
+        table = response.context['tables'][0]
+        self.assertEqual(len(table.rows), 1)
+        self.assertEqual(table.title, "Subscribed Packages")
+        self.assertIn(self.package_name, table.packages)
 
 
 class UserEmailsViewTests(TestCase):

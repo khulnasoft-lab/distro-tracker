@@ -37,6 +37,7 @@ from distro_tracker.accounts.views import (
     ResetPasswordView,
     SubscribeUserToPackageView,
     SubscriptionsView,
+    SubscriptionsTableView,
     UnsubscribeAllView,
     UnsubscribeUserView,
     UserEmailsView
@@ -159,6 +160,9 @@ urlpatterns = [
     url(r'^accounts/subscriptions/$',
         SubscriptionsView.as_view(),
         name='dtracker-accounts-subscriptions'),
+    url(r'^accounts/subscriptions-table/$',
+        SubscriptionsTableView.as_view(),
+        name='dtracker-accounts-subscriptions-table'),
     url(r'^accounts/profile/subscriptions/choose-subscription-email/$',
         ChooseSubscriptionEmailView.as_view(),
         name='dtracker-accounts-choose-email'),
