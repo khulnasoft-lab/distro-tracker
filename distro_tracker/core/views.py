@@ -9,6 +9,7 @@
 # except according to the terms contained in the LICENSE file.
 """Views for the :mod:`distro_tracker.core` app."""
 import importlib
+from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib import messages
@@ -19,7 +20,6 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
-from django.utils.http import urlquote
 from django.views.decorators.cache import cache_control
 from django.views.generic import DeleteView, ListView, TemplateView, View
 from django.views.generic.detail import DetailView
@@ -62,7 +62,7 @@ def package_page(request, package_name):
     package = get_web_package(package_name)
     if not package:
         raise Http404
-    if package.get_absolute_url() not in (urlquote(request.path), request.path):
+    if package.get_absolute_url() not in (quote(request.path), request.path):
         return redirect(package)
 
     is_subscribed = False

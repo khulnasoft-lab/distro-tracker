@@ -11,10 +11,12 @@
 # except according to the terms contained in the LICENSE file.
 """Debian specific panels on the package page."""
 
+from urllib.parse import quote, quote_plus
+
 from django.urls import reverse
 from django.utils.encoding import force_str
 from django.utils.functional import cached_property
-from django.utils.http import urlencode, urlquote, urlquote_plus
+from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 
 from distro_tracker.core.models import (
@@ -78,8 +80,8 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
             has_checks = False
         logcheck_url = \
             "https://qa.debian.org/bls/packages/{hash}/{pkg}.html".format(
-                hash=urlquote(self.package.name[0], safe=""),
-                pkg=urlquote(self.package.name, safe=""))
+                hash=quote(self.package.name[0], safe=""),
+                pkg=quote(self.package.name, safe=""))
         return {'has_checks': has_checks, 'logcheck_url': logcheck_url}
 
     def get_reproducible_context(self):
@@ -93,7 +95,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
         reproducibility_url = \
             "https://tests.reproducible-builds.org/debian/rb-pkg/{}.html"
         reproducibility_url = reproducibility_url.format(
-            urlquote(self.package.name, safe=""))
+            quote(self.package.name, safe=""))
         return {'has_reproducibility': has_reproducibility,
                 'reproducibility_url': reproducibility_url,
                 'reproducibility_status': reproducibility_status,
@@ -113,7 +115,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
 
         debcheck_url = \
             "https://qa.debian.org/dose/debcheck/src" \
-            "/{}.html".format(urlquote(self.package.name, safe=""))
+            "/{}.html".format(quote(self.package.name, safe=""))
         return {'has_debcheck': has_debcheck, 'debcheck_url': debcheck_url}
 
     def get_crossqa_context(self):
@@ -137,7 +139,7 @@ class BuildLogCheckLinks(LinksPanel.ItemProvider):
 
         return [
             TemplatePanelItem('debian/logcheck-links.html', {
-                'package_name': urlquote(self.package.name),
+                'package_name': quote(self.package.name),
                 'package_query_string': query_string,
                 **self.get_logcheck_context(),
                 **self.get_reproducible_context(),
@@ -159,7 +161,7 @@ class PopconLink(LinksPanel.ItemProvider):
             LinksPanel.SimpleLinkItem(
                 'popcon',
                 self.POPCON_URL.format(
-                    package=urlquote_plus(self.package.name)))
+                    package=quote_plus(self.package.name)))
         ]
 
 
@@ -199,8 +201,8 @@ class SourceCodeSearchLinks(LinksPanel.ItemProvider):
                 links.append(LinksPanel.SimpleLinkItem(
                     'browse source code',
                     self.SOURCES_URL_TEMPLATE.format(
-                        package=urlquote(self.package.name, safe=""),
-                        suite=urlquote(allowed_repo, safe=""))))
+                        package=quote(self.package.name, safe=""),
+                        suite=quote(allowed_repo, safe=""))))
                 break
 
         if 'unstable' in repositories:
@@ -230,8 +232,8 @@ class DebtagsLink(LinksPanel.ItemProvider):
             LinksPanel.SimpleLinkItem(
                 'edit tags',
                 self.SOURCES_URL_TEMPLATE.format(
-                    package=urlquote(self.package.name, safe=""),
-                    maint=urlquote(maintainer, safe=""))
+                    package=quote(self.package.name, safe=""),
+                    maint=quote(maintainer, safe=""))
             )
         ]
 
@@ -311,7 +313,7 @@ class ScreenshotsLink(LinksPanel.ItemProvider):
                 LinksPanel.SimpleLinkItem(
                     'screenshots',
                     self.SOURCES_URL_TEMPLATE.format(
-                        package=urlquote(self.package.name, safe=""))
+                        package=quote(self.package.name, safe=""))
                 )
             ]
         else:
