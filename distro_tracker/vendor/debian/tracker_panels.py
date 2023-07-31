@@ -12,7 +12,7 @@
 """Debian specific panels on the package page."""
 
 from django.urls import reverse
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.functional import cached_property
 from django.utils.http import urlencode, urlquote, urlquote_plus
 from django.utils.safestring import mark_safe
@@ -385,8 +385,8 @@ class BackToOldPTS(BasePanel):
     @property
     def has_content(self):
         return "packages.qa.debian.org" in \
-            force_text(self.request.META.get('HTTP_REFERER', ''),
-                       encoding='latin1', errors='replace')
+            force_str(self.request.META.get('HTTP_REFERER', ''),
+                      encoding='latin1', errors='replace')
 
 
 class Dl10nLinks(LinksPanel.ItemProvider):

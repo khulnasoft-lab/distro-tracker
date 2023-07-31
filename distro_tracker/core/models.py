@@ -36,7 +36,7 @@ from django.template.defaultfilters import slugify
 from django.template.exceptions import TemplateDoesNotExist
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.functional import cached_property
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
@@ -1234,7 +1234,7 @@ class SourcePackage(models.Model):
         changelog = debian_changelog.Changelog(changelog_content.splitlines())
         # Return the entry corresponding to the package version, or ``None``
         return next((
-            force_text(entry).strip()
+            force_str(entry).strip()
             for entry in changelog
             if entry.version == self.version),
             None)
