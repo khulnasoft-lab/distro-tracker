@@ -18,8 +18,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils.http import urlencode
 
-from jsonfield import JSONField
-
 from distro_tracker.core.models import (
     BinaryPackageBugStats,
     BugDisplayManager,
@@ -51,7 +49,7 @@ class LintianStats(models.Model):
     """
     package = models.OneToOneField(PackageName, related_name='lintian_stats',
                                    on_delete=models.CASCADE)
-    stats = JSONField()
+    stats = models.JSONField(default=dict)
 
     def __str__(self):
         return 'Lintian stats for package {package}'.format(
@@ -88,7 +86,7 @@ class PackageTransition(models.Model):
 class PackageExcuses(models.Model):
     package = models.OneToOneField(PackageName, related_name='excuses',
                                    on_delete=models.CASCADE)
-    excuses = JSONField()
+    excuses = models.JSONField(default=dict)
 
     def __str__(self):
         return "Excuses for the package {pkg}".format(pkg=self.package)
@@ -99,7 +97,7 @@ class BuildLogCheckStats(models.Model):
         SourcePackageName,
         related_name='build_logcheck_stats',
         on_delete=models.CASCADE)
-    stats = JSONField()
+    stats = models.JSONField(default=dict)
 
     def __str__(self):
         return "Build logcheck stats for {pkg}".format(pkg=self.package)
@@ -111,8 +109,8 @@ class UbuntuPackage(models.Model):
         related_name='ubuntu_package',
         on_delete=models.CASCADE)
     version = models.TextField(max_length=100)
-    bugs = JSONField(null=True, blank=True)
-    patch_diff = JSONField(null=True, blank=True)
+    bugs = models.JSONField(null=True)
+    patch_diff = models.JSONField(null=True)
 
     def __str__(self):
         return "Ubuntu package info for {pkg}".format(pkg=self.package)

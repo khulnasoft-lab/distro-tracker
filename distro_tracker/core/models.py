@@ -41,8 +41,6 @@ from django.utils.functional import cached_property
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 
-from jsonfield import JSONField
-
 from distro_tracker import vendor
 from distro_tracker.core.utils import (
     SpaceDelimitedTextField,
@@ -1163,7 +1161,7 @@ class SourcePackage(models.Model):
     dsc_file_name = models.CharField(max_length=255, blank=True)
     directory = models.CharField(max_length=255, blank=True)
     homepage = models.URLField(max_length=255, blank=True)
-    vcs = JSONField()
+    vcs = models.JSONField(null=True)
 
     class Meta:
         unique_together = ('source_package_name', 'version')
@@ -1485,7 +1483,7 @@ class PackageData(models.Model):
                                 on_delete=models.CASCADE,
                                 related_name="data")
     key = models.CharField(max_length=50)
-    value = JSONField()
+    value = models.JSONField(default=dict)
 
     def __str__(self):
         return '{key}: {value} for package {package}'.format(
@@ -1950,7 +1948,7 @@ class PackageBugStats(models.Model):
     id = models.BigAutoField(primary_key=True)  # noqa
     package = models.OneToOneField(PackageName, related_name='bug_stats',
                                    on_delete=models.CASCADE)
-    stats = JSONField(blank=True)
+    stats = models.JSONField(default=dict)
 
     def __str__(self):
         return '{package} bug stats: {stats}'.format(
@@ -1965,7 +1963,7 @@ class BinaryPackageBugStats(models.Model):
     package = models.OneToOneField(BinaryPackageName,
                                    related_name='binary_bug_stats',
                                    on_delete=models.CASCADE)
-    stats = JSONField(blank=True)
+    stats = models.JSONField(default=dict)
 
     def __str__(self):
         return '{package} bug stats: {stats}'.format(
@@ -2072,7 +2070,7 @@ class ActionItem(models.Model):
     severity = models.IntegerField(choices=SEVERITIES, default=SEVERITY_NORMAL)
     created_timestamp = models.DateTimeField(auto_now_add=True)
     last_updated_timestamp = models.DateTimeField(auto_now=True)
-    extra_data = JSONField(blank=True, null=True)
+    extra_data = models.JSONField(default=dict)
 
     objects = ActionItemManager()
 
@@ -2238,7 +2236,7 @@ class SourcePackageDeps(models.Model):
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
     build_dep = models.BooleanField(default=False)
     binary_dep = models.BooleanField(default=False)
-    details = JSONField()
+    details = models.JSONField(default=dict)
 
     class Meta:
         unique_together = ('source', 'dependency', 'repository')
@@ -2682,7 +2680,7 @@ class TaskData(models.Model):
     run_lock = models.DateTimeField(default=None, null=True)
     last_attempted_run = models.DateTimeField(default=None, null=True)
     last_completed_run = models.DateTimeField(default=None, null=True)
-    data = JSONField()
+    data = models.JSONField(default=dict)
     data_checksum = models.CharField(max_length=40, default=None, null=True)
     version = models.IntegerField(default=0, null=False)
 
