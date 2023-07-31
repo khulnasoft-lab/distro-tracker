@@ -21,7 +21,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
-from django.utils.http import is_safe_url, urlencode
+from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from django.views.generic import TemplateView
 from django.views.generic.base import View
 from django.views.generic.edit import CreateView, FormView, UpdateView
@@ -67,7 +67,7 @@ class LoginView(FormView):
     def form_valid(self, form):
         redirect_url = self.request.GET.get(
             self.redirect_parameter, self.success_url)
-        if not is_safe_url(
+        if not url_has_allowed_host_and_scheme(
             redirect_url,
             allowed_hosts=set(self.request.get_host())
         ):
@@ -87,7 +87,7 @@ class LogoutView(View):
         logout(request)
 
         next_url = request.GET.get(self.redirect_parameter, self.success_url)
-        if not is_safe_url(
+        if not url_has_allowed_host_and_scheme(
             next_url,
             allowed_hosts=set(self.request.get_host())
         ):

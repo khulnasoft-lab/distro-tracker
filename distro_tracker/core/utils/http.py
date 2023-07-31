@@ -20,7 +20,7 @@ from hashlib import md5
 from django.conf import settings
 from django.shortcuts import redirect
 from django.utils import timezone
-from django.utils.http import is_safe_url, parse_http_date
+from django.utils.http import parse_http_date, url_has_allowed_host_and_scheme
 
 import requests
 from requests.structures import CaseInsensitiveDict
@@ -359,7 +359,7 @@ def get_resource_text(*args, **kwargs):
 def safe_redirect(to, fallback, allowed_hosts=None):
     """Implements a safe redirection to `to` provided that it's safe. Else,
     goes to `fallback`. `allowed_hosts` describes the list of valid hosts for
-    the call to :func:`django.utils.http.is_safe_url`.
+    the call to :func:`django.utils.http.url_has_allowed_host_and_scheme`.
 
     :param to: The URL that one should be returned to.
     :type to: str or None
@@ -370,7 +370,8 @@ def safe_redirect(to, fallback, allowed_hosts=None):
     :type fallback: str
 
     :param allowed_hosts: A list of "safe" hosts. If `None`, relies on the
-      default behaviour of :func:`django.utils.http.is_safe_url`.
+      default behaviour of
+      :func:`django.utils.http.url_has_allowed_host_and_scheme`.
     :type allowed_hosts: list of str
 
     :returns: A ResponseRedirect instance containing the appropriate intel for
@@ -379,6 +380,6 @@ def safe_redirect(to, fallback, allowed_hosts=None):
 
     """
 
-    if to and is_safe_url(to, allowed_hosts=allowed_hosts):
+    if to and url_has_allowed_host_and_scheme(to, allowed_hosts=allowed_hosts):
         return redirect(to)
     return redirect(fallback)
