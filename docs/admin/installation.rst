@@ -10,7 +10,7 @@ Requirements
 
 Distro Tracker currently depends on the following Debian packages:
 
-- python3-django (>= 2.2)
+- python3-django (>= 3.2)
 - python3-requests
 - python3-django-jsonfield (>= 1.0.0)
 - python3-django-debug-toolbar (in development mode only)
@@ -29,11 +29,11 @@ Distro Tracker currently depends on the following Debian packages:
 - python3-sphinx (for development only, to build documentation)
 - python3-sphinx-rtd-theme (for development only, to build documentation)
 
-Here is the list of required packages for development on Debian Bullseye::
+Here is the list of required packages for development on Debian Bookworm::
 
  $ sudo apt install python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-responses python3-pyinotify python3-selenium chromium-driver
 
-If you are using Debian Buster, you will need to `enable buster-backports <https://backports.debian.org/Instructions/>`_ and install Django from there before attempting to do local development of Distro Tracker.
+If you are using Debian Bullseye, you will need to `enable bullseye-backports <https://backports.debian.org/Instructions/>`_ and install Django from there before attempting to do local development of Distro Tracker.
 
 .. _database_setup:
 
@@ -107,8 +107,3 @@ Documentation
 This project uses `Sphinx <https://www.sphinx-doc.org/en/master/>`_ for documentation. If you want to improve the documentation or build the documentation locally, first be sure to have the packages *python3-sphinx* and *python3-sphinx-rtd-theme* installed. Then go to the docs subdirectory ``cd docs`` and run ``make html`` to build the documentation. 
 
 The output will be located in ``_build/html`` and you can preview the documentation in a web browser ``firefox _build/html/index.html``.
-
-
-
-
-

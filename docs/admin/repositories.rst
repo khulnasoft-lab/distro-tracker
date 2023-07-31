@@ -3,7 +3,7 @@
 Setting up the package repositories
 ===================================
 
-In order to do its work, distro-tracker must know the repositiories to
+In order to do its work, distro-tracker must know the repositories to
 watch. And among those you should define a default repository that will
 be used in priority for package specific information.
 

@@ -137,8 +137,8 @@ from django.contrib.messages import constants as message_constants
 from django.core.exceptions import ImproperlyConfigured
 
 
-if django.VERSION < (2, 2):
-    raise ImproperlyConfigured("Distro Tracker needs Django >= 2.2")
+if django.VERSION < (3, 2):
+    raise ImproperlyConfigured("Distro Tracker needs Django >= 3.2")
 
 # Trick jsonfield.JSONField to work with pyscopg returning text
 # instead of decoded objects (required for Django 3.2 compat,
@@ -147,6 +147,9 @@ JSONFIELD_ENCODER_CLASS = json.JSONEncoder
 JSONFIELD_DECODER_KWARGS = {
     'cls': json.JSONDecoder,
 }
+
+# Use BigAutoField by default
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Django's debug mode, never enable this in production
 DEBUG = False
