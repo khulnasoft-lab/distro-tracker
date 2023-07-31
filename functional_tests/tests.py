@@ -408,7 +408,8 @@ class RepositoryAdminTest(SeleniumTestCase):
         )
 
         # The user now wants to create a new repository.
-        self.browser.find_element_by_css_selector('a.addlink').click()
+        self.browser.find_element_by_css_selector(
+            'tr.model-repository a.addlink').click()
         self.assert_in_page_body("Add repository")
         try:
             save_button = self.browser.find_element_by_css_selector(
@@ -452,7 +453,8 @@ class RepositoryAdminTest(SeleniumTestCase):
         self.assert_in_page_body('main contrib non-free')
 
         # The user now wants to add another repository
-        self.browser.find_element_by_css_selector('a.addlink').click()
+        self.browser.find_element_by_css_selector(
+            'tr.model-repository a.addlink').click()
         # This time, they want to enter all the necessary data manually.
         self.input_to_element('id_name', 'testing')
         self.input_to_element('id_shorthand', 'testing')
@@ -1118,7 +1120,7 @@ class ChangeProfileTest(UserAccountsTestMixin, SeleniumTestCase):
         self.send_enter('id_new_password2')
         # The response shows a message that the password change failed
         # again.
-        self.assert_in_page_body("The two password fields didn't match")
+        self.assert_in_page_body("The two password fields didn’t match")
 
         # In the end, the user manages to fill in the form correctly!
         self.input_to_element('id_old_password', self.password)
