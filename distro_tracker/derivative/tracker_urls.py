@@ -10,14 +10,14 @@
 """URL patterns for the distro_tracker.derivative application."""
 
 
-from django.conf.urls import url
+from django.urls import path
 
 from .views import comparison, index
 
 urlpatterns = [
-    url('^derivative/$', index, name='dtracker-derivative-index'),
-    url('^derivative/(?P<distribution>[^/]+)/$', comparison,
-        name='dtracker-derivative-comparison'),
+    path('derivative/', index, name='dtracker-derivative-index'),
+    path('derivative/<distribution>/', comparison,
+         name='dtracker-derivative-comparison'),
 ]
 
 frontpagelinks = [

@@ -9,12 +9,12 @@
 # except according to the terms contained in the LICENSE file.
 """The URL routes for the vendor.debian app."""
 
-from django.conf.urls import url
+from django.urls import path
 
 from distro_tracker.vendor.debian.views import CodeSearchView
 
 urlpatterns = [
     # code search
-    url(r'^codesearch/$', CodeSearchView.as_view(),
-        name='dtracker-code-search'),
+    path('codesearch/', CodeSearchView.as_view(),
+         name='dtracker-code-search'),
 ]
