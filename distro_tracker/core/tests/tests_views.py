@@ -1805,7 +1805,8 @@ class SetMembershipKeywordsTest(UserAuthMixin, TestCase):
             reverse(
                 'dtracker-team-set-keywords', kwargs={'slug': self.team.slug}),
             {'email': self.current_user.main_email, 'keyword[]': ['bts']},
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+            HTTP_ACCEPT='application/json',
         )
         self.assertJSONEqual(
             str(response.content, encoding='utf8'), {'status': 'ok'})
@@ -1982,7 +1983,7 @@ class NewsViewTest(TestCase, TemplateTestsMixin):
 
     def test_news_page_urls(self):
         """
-        Tests all possibile urls to access the page of a single news
+        Tests all possible urls to access the page of a single news
         """
         news = self.package.news_set.first()
         url = reverse('dtracker-news-page', kwargs={'news_id': news.id})

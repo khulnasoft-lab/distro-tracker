@@ -122,7 +122,7 @@ $(function() {
         $.post(subscribe_url, {
             'package': package_name,
             'email': email
-        }).done(function(data) {
+        }, 'json').done(function(data) {
             // Replace the subscribe button with an unsubscribe button
             toggle_subscription_buttons()
         })
@@ -131,7 +131,7 @@ $(function() {
     var unsubscribe_user_from_package = function(package_name) {
         $.post(unsubscribe_url, {
             'package': package_name
-        }).done(function(data) {
+        }, 'json').done(function(data) {
             toggle_subscription_buttons()
         });
     };

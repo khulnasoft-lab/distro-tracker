@@ -325,6 +325,7 @@ class SubscribeUserToPackageViewTests(TestCase):
         if ajax:
             kwargs = {
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
+                'HTTP_ACCEPT': 'application/json',
             }
         return self.client.post(
             reverse('dtracker-api-accounts-subscribe'), post_params, **kwargs)
@@ -454,6 +455,7 @@ class UnsubscribeUserViewTests(TestCase):
         if ajax:
             kwargs = {
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
+                'HTTP_ACCEPT': 'application/json',
             }
         return self.client.post(
             reverse('dtracker-api-accounts-unsubscribe'), post_params, **kwargs)
@@ -556,6 +558,7 @@ class UnsubscribeAllViewTests(TestCase):
         if ajax:
             kwargs = {
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
+                'HTTP_ACCEPT': 'application/json',
             }
         return self.client.post(
             reverse('dtracker-api-accounts-unsubscribe-all'), post_params,
@@ -641,6 +644,7 @@ class ModifyKeywordsViewTests(TestCase):
         if ajax:
             kwargs = {
                 'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest',
+                'HTTP_ACCEPT': 'application/json',
             }
         return self.client.post(
             reverse('dtracker-api-accounts-profile-keywords'), post_params,

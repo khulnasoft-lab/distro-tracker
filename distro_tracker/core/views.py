@@ -593,7 +593,7 @@ class SetMembershipKeywords(LoginRequiredMixin, View):
     package-specific keywords.
     """
     def render_response(self):
-        if self.request.is_ajax():
+        if self.request.headers.get('accept') == 'application/json':
             return render_to_json_response({
                 'status': 'ok',
             })

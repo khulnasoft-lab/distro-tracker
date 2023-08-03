@@ -221,7 +221,7 @@ class SubscribeUserToPackageView(LoginRequiredMixin, View):
                 pkg=package,
             )
 
-        if request.is_ajax():
+        if request.headers.get('accept') == 'application/json':
             json_result = {'status': 'ok'}
             if _err is not None:
                 json_result = {
@@ -266,7 +266,7 @@ class UnsubscribeUserView(LoginRequiredMixin, View):
 
         qs.delete()
 
-        if request.is_ajax():
+        if request.headers.get('accept') == 'application/json':
             return render_to_json_response({
                 'status': 'ok',
             })
@@ -295,7 +295,7 @@ class UnsubscribeAllView(LoginRequiredMixin, View):
         Subscription.objects.filter(
             email_settings__user_email__in=emails).delete()
 
-        if request.is_ajax():
+        if request.headers.get('accept') == 'application/json':
             return render_to_json_response({
                 'status': 'ok',
             })
@@ -371,7 +371,7 @@ class ModifyKeywordsView(LoginRequiredMixin, View):
         return self.render_response()
 
     def render_response(self):
-        if self.request.is_ajax():
+        if self.request.headers.get('accept') == 'application/json':
             return render_to_json_response({
                 'status': 'ok',
             })

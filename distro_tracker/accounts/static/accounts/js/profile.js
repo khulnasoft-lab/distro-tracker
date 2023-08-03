@@ -8,7 +8,7 @@ $(function() {
         $.post(unsubscribe_url, {
             'package': $this.data('package'),
             'email': $this.data('email')
-        }).done(function(data) {
+        }, 'json').done(function(data) {
             var $group = $this.closest('.accordion-group')
             $group.fadeOut(500, function() {
                 if ($group.siblings('.accordion-group').length === 0) {
@@ -29,7 +29,7 @@ $(function() {
         var $this = $(this);
         $.post(unsubscribe_all_url, {
             'email': $this.data('email')
-        }).done(function(data) {
+        }, 'json').done(function(data) {
             // Remove all previously existing subscriptions from the page.
             var $group = $this.closest('.accordion-group');
             var to_remove = $group.find('.accordion-group.subscription-group');
@@ -112,7 +112,7 @@ $(function() {
             'package': $modal.data('package'),
             'email': $modal.data('email'),
             'keyword': keywords
-        });
+        }, 'json');
         $($modal.data('details')).find('.keyword-list').html(new_list_html);
 
         $modal.modal('hide');
