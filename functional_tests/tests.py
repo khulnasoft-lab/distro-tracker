@@ -121,6 +121,14 @@ class SeleniumTestCase(LiveServerTestCase):
         element = self.browser.find_element_by_id(tag_id)
         element.send_keys(Keys.ENTER)
 
+    def dump_page(self):
+        body = self.browser.find_element_by_tag_name('body')
+        print("Current URL:", self.browser.current_url)
+        print(f"Screenshot: {os.getcwd()}/selenium-dump-page.png")
+        body.screenshot("selenium-dump-page.png")
+        print("Body HTML dump:")
+        print(body.get_attribute("innerHTML"))
+
     def assert_in_page_body(self, text):
         body = self.browser.find_element_by_tag_name('body')
         self.assertIn(text, body.text)
@@ -644,23 +652,23 @@ class UserRegistrationTest(UserAccountsTestMixin, SeleniumTestCase):
         subscriptions to some packages.
         """
         # === Set up such an email ===
-        email = UserEmail.objects.create(email='user@domain.com')
+        email = 'user@domain.com'
         package_name = 'dummy-package'
         Subscription.objects.create_for(
             email=email,
             package_name=package_name)
         # The user opens the registration page and enters the email
         self.get_page(self.get_registration_url())
-        self.input_to_element('id_main_email', email.email)
+        self.input_to_element('id_main_email', email)
         self.send_enter('id_main_email')
         self.wait_response(1)
 
         # The user is successfully registered
         self.assertEqual(1, User.objects.count())
         user = User.objects.all()[0]
-        self.assertEqual(email.email, user.main_email)
+        self.assertEqual(email, user.main_email)
         self.assertEqual(
-            [email.email],
+            [email],
             [e.email for e in user.emails.all()])
         # A message confirms that the user's registration is successful.
         self.assert_in_page_body(
