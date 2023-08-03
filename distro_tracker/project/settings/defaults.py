@@ -127,6 +127,7 @@ of those settings.
 More settings:
 
 """
+import json
 import os.path
 import socket
 from os.path import dirname
@@ -136,8 +137,16 @@ from django.contrib.messages import constants as message_constants
 from django.core.exceptions import ImproperlyConfigured
 
 
-if django.VERSION < (1, 11):
-    raise ImproperlyConfigured("Distro Tracker needs Django >= 1.11")
+if django.VERSION < (2, 2):
+    raise ImproperlyConfigured("Distro Tracker needs Django >= 2.2")
+
+# Trick jsonfield.JSONField to work with pyscopg returning text
+# instead of decoded objects (required for Django 3.2 compat,
+# see https://salsa.debian.org/qa/distro-tracker/-/issues/69)
+JSONFIELD_ENCODER_CLASS = json.JSONEncoder
+JSONFIELD_DECODER_KWARGS = {
+    'cls': json.JSONDecoder,
+}
 
 # Django's debug mode, never enable this in production
 DEBUG = False
