@@ -29,6 +29,7 @@ contributors, advanced users, etc.
    admin/initial-setup
    admin/email
    admin/vendor
+   admin/upgrade-notes
 
 .. toctree::
    :maxdepth: 3
