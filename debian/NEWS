@@ -1,0 +1,7 @@
+distro-tracker (1.2.1) unstable; urgency=medium
+
+  * Final release in 1.2.x with all Django 3.2 related migrations applied.
+    Upgrade to this version is required because we will squash the migration
+    history in the next release.
+
+ -- Raphaël Hertzog <hertzog@debian.org>  Fri, 11 Aug 2023 13:23:55 +0200

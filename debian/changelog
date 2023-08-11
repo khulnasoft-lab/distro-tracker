@@ -1,3 +1,29 @@
+distro-tracker (1.2.1) unstable; urgency=medium
+
+  * Final release in 1.2.x with all Django 3.2 related migrations applied.
+    Upgrade to this version is required because we will squash the migration
+    history in the next release.
+
+  * Add dpkg-dev to Recommends
+  * Update years in the copyright notice in the footer
+  * Document some upgrade notes for Debian 11 and 12
+  * Add definition of containers useful for development
+  * Make distro-tracker compatible with Django 3.2
+  * Improve functional tests to better work with Django 3.2
+  * Require Django 3.2 as minimal version
+  * Fix functional tests for Django 3.2
+  * Switch to Django's JSONField implementation
+  * Replace django.conf.urls.url with django.urls.path for Django 4.x compatibility
+  * Replace force_text() with force_str() for Django 4.x compatibility
+  * Replace Django's urlquote() and urlquote_plus() with their urllib counterpart
+  * Replace is_safe_url() with url_has_allowed_host_and_scheme()
+  * Make it easier to see which test trigger warnings
+  * Replace request.is_ajax() with custom check based on Accept HTTP header
+  * Split some migrations in multiple steps to try to avoid deadlock issues
+  * Add debug_toolbar as build dependency.
+
+ -- Raphaël Hertzog <raphael@freexian.com>  Fri, 11 Aug 2023 13:20:33 +0200
+
 distro-tracker (1.2.0) unstable; urgency=medium
 
   [ Raphaël Hertzog ]
