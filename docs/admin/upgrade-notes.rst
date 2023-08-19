@@ -3,6 +3,29 @@
 Upgrade Notes
 =============
 
+Update to distro-tracker 1.3.x
+------------------------------
+
+Before upgrading to distro-tracker 1.3.x, you need to deploy version 1.2.1
+and complete all the pending migrations (``sudo -u distro-tracker
+distro-tracker migrate`` or ``./manage.py migrate`` as the appropriate
+user) because with 1.3.0 we have recreated the migrations from scratch
+to get rid of the dependency on the old jsonfield.
+
+We have added some meta-information in the new migrations indicating
+that they are equivalent to the former set of migrations so a plain
+migrate call will work and detect that they are already applied.
+
+If you upgrade without applying all the migrations from 1.2.1, you will
+get unhelpful failures from ``./manage.py migrate`` mentioning that some
+of the applications are not installed::
+
+    ValueError: The field debian.BuildLogCheckStats.package was declared with a lazy reference to 'core.sourcepackagename', but app 'core' isn't installed.
+    [...]
+
+The precise error message will likely vary depending on the Django
+applications that you have enabled in your distro-tracker configuration.
+
 Update to Debian 12 / distro-tracker 1.2.x
 ------------------------------------------
 
