@@ -4,7 +4,6 @@ RUN apt-get update -y; \
     python3-django/bullseye-backports \
     python3-requests \
     python3-django-captcha \
-    python3-django-jsonfield \
     python3-django-debug-toolbar \
     python3-django-extensions \
     python3-debian \

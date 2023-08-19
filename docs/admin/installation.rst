@@ -12,7 +12,6 @@ Distro Tracker currently depends on the following Debian packages:
 
 - python3-django (>= 3.2)
 - python3-requests
-- python3-django-jsonfield (>= 1.0.0)
 - python3-django-debug-toolbar (in development mode only)
 - python3-django-captcha (optional)
 - python3-debian
@@ -31,7 +30,7 @@ Distro Tracker currently depends on the following Debian packages:
 
 Here is the list of required packages for development on Debian Bookworm::
 
- $ sudo apt install python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-responses python3-pyinotify python3-selenium chromium-driver
+ $ sudo apt install python3-django python3-requests python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-responses python3-pyinotify python3-selenium chromium-driver
 
 If you are using Debian Bullseye, you will need to `enable bullseye-backports <https://backports.debian.org/Instructions/>`_ and install Django from there before attempting to do local development of Distro Tracker.
 

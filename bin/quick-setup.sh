@@ -19,16 +19,16 @@ if [ ! -e distro_tracker/project/settings/local.py.sample-debian-dev ]; then
 fi
 
 echo ">>> Ensuring we have the required packages"
-packages="python3-django python3-requests python3-django-jsonfield python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium-driver"
+packages="python3-django python3-requests python3-django-debug-toolbar python3-debian python3-debianbts python3-apt python3-gpg python3-yaml python3-bs4 python3-pyinotify python3-selenium chromium-driver"
 if ! dpkg-query -W $packages >/dev/null; then
     echo ">>> Installing the required packages with “sudo apt install”"
     sudo apt install $packages
 fi
 version=$(dpkg-query -W -f'${Version}' python3-django)
-if dpkg --compare-versions $version lt 2:2.2; then
-    echo "WARNING: you need python3-django >= 2:2.2"
-    echo "Trying to install it from buster-backports"
-    sudo apt install python3-django/buster-backports
+if dpkg --compare-versions $version lt 2:3.2; then
+    echo "WARNING: you need python3-django >= 2:3.2"
+    echo "Trying to install it from bullseye-backports"
+    sudo apt install python3-django/bullseye-backports
 fi
 
 echo ">>> Installing a configuration file"

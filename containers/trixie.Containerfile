@@ -19,10 +19,7 @@ RUN apt-get update -y; \
     python3-sphinx-rtd-theme \
     postgresql \
     python3-selenium \
-    chromium-driver \
-    wget; \
-    wget http://ftp.debian.org/debian/pool/main/p/python-django-jsonfield/python3-django-jsonfield_1.4.0-2_all.deb; \
-    apt install ./python3-django-jsonfield_1.4.0-2_all.deb
+    chromium-driver;
 COPY --chmod=0755 entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 VOLUME /app
