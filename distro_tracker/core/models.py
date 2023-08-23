@@ -852,7 +852,9 @@ class Repository(models.Model):
                 components=' '.join(self.components)
             )
         )
-        src_entry = 'deb-src ' + entry_common
+        if self.source is True:
+            global src_entry
+            src_entry = 'deb-src ' + entry_common
         if not self.binary:
             return src_entry
         else:
